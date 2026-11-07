@@ -29,6 +29,9 @@ class FontWizardController:
             self.state_store,
             self.preflight,
         )
+        saved = self.state_store.load_or_empty().get("install", {})
+        self.workflow.include_chinese = bool(saved.get("include_chinese", False))
+        self.workflow.include_explorer = bool(saved.get("include_explorer", False))
         system_weights = self.workflow._system_weights()
         self.selection = SelectionState(
             paths={w: None for w in system_weights},
@@ -66,6 +69,20 @@ class FontWizardController:
                         pass
 
         return report
+
+    def set_include_chinese(self, enabled):
+        self.workflow.include_chinese = bool(enabled)
+        active_weights = self.workflow._system_weights()
+        primary = self.selection.paths.get("regular")
+        detected = detect_weight_overrides(primary, weights=active_weights) if primary else {}
+        self.selection.paths = {
+            key: self.selection.paths.get(key) or detected.get(key) or primary
+            for key in active_weights
+        }
+        self.selection.labels = {
+            key: self.selection.labels.get(key, "auto-detected" if primary else "unset")
+            for key in active_weights
+        }
 
     def set_regular_font(self, path):
         metadata = inspect_font(path)

@@ -12,6 +12,7 @@ from PySide6.QtCore import Qt, QThread, Signal, QSize, QPoint, QPointF, QRect, Q
 from PySide6.QtGui import QDesktopServices, QFont, QFontDatabase, QFontMetrics, QIcon, QImage, QLinearGradient, QRadialGradient, QColor, QPainter, QPainterPath, QPen, QPixmap, QPolygonF
 from PySide6.QtWidgets import (
     QApplication,
+    QCheckBox,
     QFileDialog,
     QBoxLayout,
     QFrame,
@@ -763,6 +764,8 @@ class WeightCard(QFrame):
             title_str = "Variable UI Font"
         elif weight.startswith("consolas_"):
             title_str = "Monospaced " + weight.replace("consolas_", "").replace("_", " ").title()
+        elif weight.startswith("yahei_"):
+            title_str = {"yahei_regular": "中文 · 常规", "yahei_bold": "中文 · 粗体", "yahei_light": "中文 · 细体"}[weight]
         else:
             title_str = weight.replace("_", " ").title()
 
@@ -790,6 +793,8 @@ class WeightCard(QFrame):
         
         is_mono = weight.startswith("consolas_")
         sample_text = "The quick brown fox jumps over the lazy dog"
+        if weight.startswith("yahei_"):
+            sample_text = "中文字体预览：QQ / 微信聊天，你好世界！"
         self.preview = QLabel(sample_text)
         self.preview.setObjectName("VariantPreview")
         self.preview.setWordWrap(True)
@@ -1879,6 +1884,7 @@ class FontWizardApp(QMainWindow):
 
         self._build_header()
         self._build_font_setup()
+        self._build_chinese_option()
         self._build_variants()
         self.main_layout.addStretch(1)
         self._action_buttons = (self.local_btn, self.fetch_btn, self.apply_btn, self.restore_btn)
@@ -2070,6 +2076,53 @@ class FontWizardApp(QMainWindow):
 
         self.local_fonts_guide = LocalFontsGuide()
         self.main_layout.addWidget(self.local_fonts_guide, 1000)
+
+    def _build_chinese_option(self):
+        row = QWidget()
+        layout = QVBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+        self.chinese_option = QCheckBox("中文字体兼容（QQ / 微信）")
+        self.chinese_option.setChecked(self.controller.workflow.include_chinese)
+        self.chinese_option.setToolTip(
+            "替换系统微软雅黑和微软雅黑 UI 的常规、粗体、细体，需重启 Windows。\n"
+            "其他使用这些字体的软件也会变化；应用内置字体不保证生效。\n"
+            "取消勾选仅停止后续替换，已应用的中文字体需通过 Restore Original Fonts 恢复。"
+        )
+        note = QLabel("替换系统微软雅黑，影响其他软件；请选择含中文的静态 TTF。重启后生效。")
+        note.setObjectName("CardDesc")
+        note.setWordWrap(True)
+        layout.addWidget(self.chinese_option)
+        layout.addWidget(note)
+        self.explorer_option = QCheckBox("资源管理器字体（文件列表 / 侧栏 / 桌面）")
+        self.explorer_option.setChecked(self.controller.workflow.include_explorer)
+        self.explorer_option.setToolTip(
+            "让文件列表、桌面图标及系统菜单字体跟随所选界面字体，保留字号与字重。\n"
+            "会影响其他使用系统菜单/消息字体的软件；完整效果需重启 Windows。\n"
+            "原设置自动备份；恢复请使用 Restore Original Fonts，取消勾选不会自动恢复。"
+        )
+        layout.addWidget(self.explorer_option)
+        self.explorer_option.toggled.connect(self._on_explorer_option)
+        self.main_layout.addWidget(row)
+        self.chinese_option.toggled.connect(self._on_chinese_option)
+
+    def _on_chinese_option(self, enabled):
+        try:
+            self.controller.set_include_chinese(enabled)
+        except Exception as exc:
+            self.chinese_option.blockSignals(True)
+            self.chinese_option.setChecked(not enabled)
+            self.chinese_option.blockSignals(False)
+            self.controller.workflow.include_chinese = not enabled
+            QMessageBox.warning(self, "中文字体", str(exc))
+            return
+        self._selection_dirty = True
+        self.refresh_all()
+
+    def _on_explorer_option(self, enabled):
+        self.controller.workflow.include_explorer = bool(enabled)
+        self._selection_dirty = True
+        self.refresh_all()
 
     def _set_button_role(self, button, role):
         if button.property("buttonRole") == role:
@@ -2698,6 +2751,8 @@ class FontWizardApp(QMainWindow):
 
         for button in self._action_buttons:
             button.setEnabled(False)
+        self.chinese_option.setEnabled(False)
+        self.explorer_option.setEnabled(False)
         colors = get_theme_colors(self.is_dark)
         cover = QLabel(text, btn)
         cover.setAlignment(Qt.AlignCenter)
@@ -2740,6 +2795,8 @@ class FontWizardApp(QMainWindow):
 
         if not result.success:
             QMessageBox.warning(self, "Result", result.message)
+        elif result.warnings:
+            QMessageBox.information(self, "Result", result.message + "\n\n" + "\n".join(result.warnings))
         self.refresh_all()
         if btn == self.apply_btn and result.success:
             self._morph_to_star()
@@ -2790,6 +2847,8 @@ class FontWizardApp(QMainWindow):
         has_selected_font = regular_font is not None
         is_apply_pending = report.install_state == "pending_reboot_apply"
         is_recovery_pending = report.install_state == "pending_reboot_recovery"
+        self.chinese_option.setEnabled(not is_pending)
+        self.explorer_option.setEnabled(not is_pending)
 
         if is_recovery_pending:
             self._browse_action = "select"

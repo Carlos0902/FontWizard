@@ -330,6 +330,19 @@ class PreflightService:
             issues.append("This version of Font Wizard supports Windows 10 (build 10240+) and Windows 11.")
         warnings = []
 
+        # Keep Recovery available for user font settings even if Windows Update
+        # has already restored every physical system font file.
+        try:
+            from explorer_fonts import ExplorerFontService
+            shell_active = ExplorerFontService(
+                self.paths.local_root / "explorer-fonts.json"
+            ).has_active_backup()
+        except Exception as exc:
+            shell_active = True
+            warnings.append(f"资源管理器字体备份无法读取：{exc}")
+        if install == "clean" and shell_active:
+            install = "managed"
+
 
         readiness, headline, summary, next_step = experience_state(
             is_supported=is_supported,

@@ -3,8 +3,8 @@ from pathlib import Path
 from fontTools.ttLib import TTFont
 
 
-def read_segoe_identity(segoe_path):
-    font = TTFont(segoe_path)
+def read_segoe_identity(segoe_path, font_number=-1):
+    font = TTFont(segoe_path, fontNumber=font_number)
     try:
         identity = {
             "macStyle": font["head"].macStyle,

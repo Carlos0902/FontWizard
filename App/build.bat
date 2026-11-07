@@ -37,6 +37,7 @@ echo Building Font Wizard...
 %PYTHON_EXE% -m PyInstaller --noconfirm --onefile --windowed --name "FontWizard" ^
     --manifest "fontwizard.manifest" --uac-admin ^
     --add-data "src/assets;assets" ^
+    --collect-submodules fontTools.ttLib.tables ^
     --icon="src/assets/font-wizard.ico" ^
     --version-file="fontwizard_version_info.txt" ^
     "src/main.py"

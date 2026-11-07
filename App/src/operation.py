@@ -2,7 +2,7 @@ import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from fontTools.ttLib import TTFont
+from fontTools.ttLib import TTCollection, TTFont
 
 from font_cache import refresh_windows_font_cache
 from font_generation import build_font
@@ -14,7 +14,7 @@ from operation_files import (
     schedule_canonical_replacement,
     schedule_canonical_restore,
 )
-from settings import FONTS_DIR, default_registry_targets
+from settings import CHINESE_WEIGHTS, FONTS_DIR, default_registry_targets
 from app_state import hash_file, iso_now
 
 
@@ -42,10 +42,16 @@ class FontWorkflow:
         self.preflight = preflight
         self.identity_fonts_root = Path(identity_fonts_root or FONTS_DIR)
         self.active_fonts_root = Path(active_fonts_root or FONTS_DIR)
+        self.include_chinese = False
+        self.include_explorer = False
+
+    def _explorer_service(self):
+        from explorer_fonts import ExplorerFontService
+        return ExplorerFontService(self.paths.local_root / "explorer-fonts.json")
 
     def _system_weights(self):
         from settings import get_system_weights
-        return get_system_weights(self.identity_fonts_root)
+        return get_system_weights(self.identity_fonts_root, include_chinese=self.include_chinese)
 
     def _system_font_files(self):
         from settings import get_existing_mono_companions
@@ -75,6 +81,11 @@ class FontWorkflow:
                 report.warnings,
             )
 
+        previous_install = self.state_store.load_or_empty().get("install", {})
+        if (report.install_state == "pending_reboot_apply"
+                and bool(previous_install.get("include_chinese")) != self.include_chinese):
+            return OperationResult(False, "请先重启 Windows 完成上次替换，再切换中文兼容模式。")
+
         summary = self.validate(selection, source_labels)
         if not summary.ok:
             return OperationResult(False, summary.errors[0] if summary.errors else "The selected font cannot be used.", summary.errors, summary.warnings)
@@ -85,19 +96,35 @@ class FontWorkflow:
         try:
             self._emit(progress, 5, "Backing up original Windows system fonts...")
             backup_warnings, backed_count = backup_canonical_fonts(self, system_files)
+            if self.include_chinese:
+                # Never replace a collection without a verified, restorable donor.
+                from winsxs import expected_entry, is_authentic_font
+                for name in CHINESE_WEIGHTS.values():
+                    backup = self.paths.backup_root / name
+                    if not backup.is_file() or not is_authentic_font(backup, expected_entry(name)):
+                        raise RuntimeError(f"未找到可验证的原始中文字体备份：{name}。未安排字体替换。")
             if backed_count < len(system_files):
                 backup_warnings.append(
                     f"Note: {backed_count} of {len(system_files)} original fonts were backed up."
                 )
 
-            self._emit(progress, 15, "Cleaning up old pending operations...")
-            pending_cleanup_warnings, _ = cleanup_orphaned_pending_ops(self)
-
             self._emit(progress, 30, "Compiling custom TrueType font weights...")
             artifacts = build_artifacts(self, summary.entries, stage_dir)
 
+            if self.include_explorer:
+                self._explorer_service().prepare()
+
+            self._emit(progress, 70, "Cleaning up old pending operations...")
+            pending_cleanup_warnings, _ = cleanup_orphaned_pending_ops(self)
+
             self._emit(progress, 75, "Scheduling physical in-place replacement on boot...")
             manifest, schedule_warnings = schedule_canonical_replacement(self, artifacts)
+            if not self.include_chinese:
+                # Unchecking stops future changes; preserve active Chinese fonts
+                # in the manifest so verification and Recovery still cover them.
+                for key, value in previous_install.get("fonts", {}).items():
+                    if key in CHINESE_WEIGHTS:
+                        manifest.setdefault(key, value)
 
             self._emit(progress, 88, "Purging system font caches...")
             cache_warnings = purge_system_font_cache()
@@ -110,9 +137,17 @@ class FontWorkflow:
                 pass
 
             self._emit(progress, 95, "Saving installation state...")
+            explorer_warnings = []
+            if self.include_explorer:
+                try:
+                    self._explorer_service().apply()
+                except Exception as exc:
+                    explorer_warnings.append(f"资源管理器字体设置未完成：{exc}；系统字体仍已安排重启替换。")
             state = self.state_store.load_or_empty()
             state["install"] = {
                 "status": "pending_reboot_apply",
+                "include_chinese": self.include_chinese,
+                "include_explorer": self.include_explorer,
                 "fonts": manifest,
                 "backed_up_count": backed_count,
                 "applied_at": iso_now(),
@@ -133,6 +168,7 @@ class FontWorkflow:
                 *pending_cleanup_warnings,
                 *schedule_warnings,
                 *cache_warnings,
+                *explorer_warnings,
             ]
             return OperationResult(
                 True,
@@ -159,17 +195,34 @@ class FontWorkflow:
 
         system_files = self._system_font_files()
 
+        # Recovery must include Chinese fonts even after the option is unchecked
+        # or the application has been restarted without a selected source font.
+        for name in CHINESE_WEIGHTS.values():
+            if (self.paths.backup_root / name).is_file() and name not in system_files:
+                system_files.append(name)
+
         try:
             self._emit(progress, 10, "Cleaning up stale pending files...")
             pending_cleanup_warnings, _ = cleanup_orphaned_pending_ops(self)
 
             self._emit(progress, 35, "Scheduling restore of original fonts on boot...")
             scheduled_count, restore_warnings = schedule_canonical_restore(self, system_files)
+            explorer_warnings = []
+            explorer_restored = False
+            try:
+                explorer_restored = self._explorer_service().restore()
+            except Exception as exc:
+                explorer_warnings.append(f"资源管理器字体设置恢复未完成：{exc}；请保留备份并重试恢复。")
             if scheduled_count == 0:
+                if explorer_restored:
+                    return OperationResult(
+                        True, "资源管理器原始字体设置已恢复。未找到可用于恢复系统字体文件的备份。",
+                        warnings=[*restore_warnings, *explorer_warnings],
+                    )
                 return OperationResult(
                     False,
                     "No authentic backup font files were found. You can restore original Windows fonts by running 'sfc /scannow' or 'DISM /Online /Cleanup-Image /RestoreHealth' in an Administrator terminal.",
-                    restore_warnings,
+                    [*restore_warnings, *explorer_warnings],
                 )
 
             self._emit(progress, 75, "Purging system font caches...")
@@ -203,6 +256,7 @@ class FontWorkflow:
                 *pending_cleanup_warnings,
                 *restore_warnings,
                 *cache_warnings,
+                *explorer_warnings,
             ]
             return OperationResult(
                 True,
@@ -217,17 +271,17 @@ class FontWorkflow:
             callback(value, message)
 
 
-def _verify_build_output(output_path: Path, segoe_path: Path):
+def _verify_build_output(output_path: Path, segoe_path: Path, font_number=-1):
     built_font = None
     donor_font = None
     try:
         try:
-            built_font = TTFont(output_path)
+            built_font = TTFont(output_path, fontNumber=font_number)
         except Exception as exc:
             raise RuntimeError(f"Built font could not be reopened: {output_path.name}") from exc
 
         try:
-            donor_font = TTFont(segoe_path)
+            donor_font = TTFont(segoe_path, fontNumber=font_number)
         except Exception as exc:
             raise RuntimeError(f"Could not inspect donor font: {segoe_path.name}") from exc
 
@@ -283,12 +337,21 @@ def build_artifacts(workflow, entries, stage_dir):
             segoe_path = workflow.identity_fonts_root / entry.system_filename
         output_path = stage_dir / entry.system_filename
 
-        if entry.system_filename.lower() == "seguivar.ttf":
+        if entry.system_filename.lower().endswith(".ttc"):
+            from chinese_fonts import build_chinese_collection
+            build_chinese_collection(entry.source_path, segoe_path, output_path)
+            with TTCollection(segoe_path) as donor, TTCollection(output_path) as built:
+                if len(donor.fonts) != len(built.fonts):
+                    raise RuntimeError(f"字体集合成员数量不一致：{output_path.name}")
+                for index in range(len(donor.fonts)):
+                    _verify_build_output(output_path, segoe_path, index)
+        elif entry.system_filename.lower() == "seguivar.ttf":
             from font_generation import build_variable_font
             build_variable_font(entry.source_path, segoe_path, output_path)
         else:
             build_font(entry.source_path, segoe_path, output_path)
-        _verify_build_output(output_path, segoe_path)
+        if not entry.system_filename.lower().endswith(".ttc"):
+            _verify_build_output(output_path, segoe_path)
 
         artifacts[entry.weight] = {
             "weight": entry.weight,

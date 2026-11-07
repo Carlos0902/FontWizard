@@ -56,6 +56,7 @@ def validate_selection(selection, source_labels=None, weights=None):
     mono_family_names = set()
     variable_rejections = set()
     invalid_source_rejections = set()
+    chinese_checked = set()
     source_labels = source_labels or {}
 
     for weight, source in resolved.items():
@@ -87,6 +88,13 @@ def validate_selection(selection, source_labels=None, weights=None):
                 continue
 
         metadata = metadata_cache[cache_key]
+        if weight.startswith("yahei_") and cache_key not in chinese_checked:
+            from chinese_fonts import validate_chinese_source
+            try:
+                validate_chinese_source(source_path)
+            except Exception as exc:
+                summary.errors.append(str(exc))
+            chinese_checked.add(cache_key)
         if metadata.is_variable and weight != "variable":
             if cache_key not in variable_rejections:
                 summary.errors.append(
@@ -117,6 +125,12 @@ def validate_selection(selection, source_labels=None, weights=None):
     if len(ui_family_names) > 1 or len(mono_family_names) > 1:
         summary.warnings.append(
             "Selected styles come from multiple font families. Review them carefully before applying."
+        )
+
+    if any(weight.startswith("yahei_") for weight in active_weights):
+        summary.warnings.append(
+            "中文兼容模式会替换系统微软雅黑/微软雅黑 UI，影响 QQ、微信及其他使用这些字体的软件。"
+            "需重启 Windows；应用内置字体可能不受影响。常用字检查不代表完整字库覆盖。"
         )
 
     return summary

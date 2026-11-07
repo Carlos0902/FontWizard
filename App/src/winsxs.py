@@ -31,6 +31,9 @@ def _is_windows_11() -> bool:
 
 
 EXPECTED_FAMILIES = {
+    "msyh.ttc": ("microsoft ya hei", "Microsoft Corporation", 20000),
+    "msyhbd.ttc": ("microsoft ya hei", "Microsoft Corporation", 20000),
+    "msyhl.ttc": ("microsoft ya hei", "Microsoft Corporation", 20000),
     "segoeui.ttf": ("segoe ui", "Microsoft Corporation", (4650, 2100)),
     "segoeuib.ttf": ("segoe ui", "Microsoft Corporation", (4650, 2100)),
     "segoeuii.ttf": ("segoe ui", "Microsoft Corporation", (3050, 2050)),
@@ -92,7 +95,7 @@ def _profile(path: Path):
         return cached
 
     try:
-        font = TTFont(path)
+        font = TTFont(path, fontNumber=0 if path.suffix.lower() == ".ttc" else -1)
     except (TTLibError, OSError, ValueError):
         _PROFILE_CACHE[resolved] = None
         return None

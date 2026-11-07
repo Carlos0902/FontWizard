@@ -73,6 +73,11 @@ def find_original_font_backup(workflow, name: str) -> Path | None:
     backup_dir = workflow.paths.backup_root
     cached = backup_dir / name
     if cached.exists() and cached.stat().st_size > 50_000:
+        if name.lower().endswith(".ttc"):
+            from winsxs import expected_entry, is_authentic_font
+            if is_authentic_font(cached, expected_entry(name) or {}):
+                return cached
+            return None
         return cached
 
     candidate_dirs = [
@@ -120,8 +125,9 @@ def backup_canonical_fonts(workflow, font_names: list[str]) -> tuple[list[str], 
     for name in font_names:
         dest = backup_dir / name
         if dest.exists() and dest.stat().st_size > 50_000:
-            backed_up_count += 1
-            continue
+            if not name.lower().endswith(".ttc") or find_original_font_backup(workflow, name):
+                backed_up_count += 1
+                continue
 
         src = find_original_font_backup(workflow, name)
 

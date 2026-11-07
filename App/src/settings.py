@@ -65,7 +65,14 @@ def get_existing_mono_companions(fonts_dir=None):
         if (target_dir / fname).exists()
     }
 
-def get_system_weights(fonts_dir=None):
+CHINESE_WEIGHTS = {
+    "yahei_regular": "msyh.ttc",
+    "yahei_bold": "msyhbd.ttc",
+    "yahei_light": "msyhl.ttc",
+}
+
+
+def get_system_weights(fonts_dir=None, include_chinese=False):
     target_dir = Path(fonts_dir or FONTS_DIR)
     weights = dict(STATIC_WEIGHTS)
     if (target_dir / "SegUIVar.ttf").exists():
@@ -73,11 +80,16 @@ def get_system_weights(fonts_dir=None):
     for k, v in CONSOLAS_WEIGHTS.items():
         if (target_dir / v).exists():
             weights[k] = v
+    if include_chinese:
+        weights.update(CHINESE_WEIGHTS)
     return weights
 
 WEIGHTS = get_system_weights()
 
 REGISTRY_NAMES = {
+    "yahei_regular": "Microsoft YaHei & Microsoft YaHei UI (TrueType)",
+    "yahei_bold": "Microsoft YaHei Bold & Microsoft YaHei UI Bold (TrueType)",
+    "yahei_light": "Microsoft YaHei Light & Microsoft YaHei UI Light (TrueType)",
     "regular": "Segoe UI (TrueType)",
     "bold": "Segoe UI Bold (TrueType)",
     "italic": "Segoe UI Italic (TrueType)",
@@ -98,6 +110,9 @@ REGISTRY_NAMES = {
 }
 
 WEIGHT_TARGETS = {
+    "yahei_regular": (400, False),
+    "yahei_bold": (700, False),
+    "yahei_light": (300, False),
     "regular":              (400, False),
     "bold":                 (700, False),
     "italic":               (400, True),
