@@ -214,15 +214,15 @@ def experience_state(is_supported, is_admin, install_state):
         return (
             "unsupported",
             "This Windows is not supported",
-            "Font Wizard supports Windows 10 (build 10240+) and Windows 11.",
-            "Run Font Wizard on a supported Windows 10 or Windows 11 PC.",
+            "Fontscape supports Windows 10 (build 10240+) and Windows 11.",
+            "Run Fontscape on a supported Windows 10 or Windows 11 PC.",
         )
     if not is_admin:
         return (
             "needs_admin",
             "Administrator access required",
-            "Font Wizard needs to run as Administrator to change system fonts.",
-            "Close Font Wizard and reopen it \u2014 accept the security prompt when asked.",
+            "Fontscape needs to run as Administrator to change system fonts.",
+            "Close Fontscape and reopen it \u2014 accept the security prompt when asked.",
         )
     if install_state == "pending_reboot_apply":
         return (
@@ -236,7 +236,7 @@ def experience_state(is_supported, is_admin, install_state):
             "pending_reboot",
             "Restart Windows to finish recovery",
             "The original fonts have been set up, but some files still need a restart to take effect.",
-            "Restart your PC, then open Font Wizard again if you want to apply a new font.",
+            "Restart your PC, then open Fontscape again if you want to apply a new font.",
         )
     if install_state == "partial":
         return (
@@ -262,11 +262,11 @@ def experience_state(is_supported, is_admin, install_state):
 
 def build_messages(install_state, is_supported):
     if not is_supported:
-        return ["Use Font Wizard on Windows 10 or Windows 11."]
+        return ["Use Fontscape on Windows 10 or Windows 11."]
 
     notes = []
     if install_state == "managed":
-        notes.append("The current fonts were installed by Font Wizard.")
+        notes.append("The current fonts were installed by Fontscape.")
     if install_state == "partial":
         notes.append("Some original Windows fonts were restored since the font was last applied.")
     if install_state == "pending_reboot_apply":
@@ -327,7 +327,7 @@ class PreflightService:
 
         issues = []
         if not is_supported:
-            issues.append("This version of Font Wizard supports Windows 10 (build 10240+) and Windows 11.")
+            issues.append("This version of Fontscape supports Windows 10 (build 10240+) and Windows 11.")
         warnings = []
 
         # Keep Recovery available for user font settings even if Windows Update

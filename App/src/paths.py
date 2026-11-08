@@ -5,6 +5,15 @@ from pathlib import Path
 from settings import APP_NAME
 
 
+def _app_directory(base, override):
+    explicit = os.environ.get(f"FONTSCAPE_{override}") or os.environ.get(f"FONTWIZARD_{override}")
+    if explicit:
+        return Path(explicit)
+    current = base / APP_NAME
+    legacy = base / "Font Wizard"
+    return legacy if legacy.is_dir() and not current.exists() else current
+
+
 @dataclass(frozen=True)
 class RuntimePaths:
     source_root: Path
@@ -24,17 +33,8 @@ class RuntimePaths:
         source_root = Path(__file__).resolve().parent
         project_root = source_root.parent
 
-        program_data = os.environ.get("FONTWIZARD_DATA_DIR")
-        if program_data:
-            data_root = Path(program_data)
-        else:
-            data_root = Path(os.environ.get("PROGRAMDATA", project_root)) / APP_NAME
-
-        local_data = os.environ.get("FONTWIZARD_LOCAL_DIR")
-        if local_data:
-            local_root = Path(local_data)
-        else:
-            local_root = Path(os.environ.get("LOCALAPPDATA", project_root)) / APP_NAME
+        data_root = _app_directory(Path(os.environ.get("PROGRAMDATA", project_root)), "DATA_DIR")
+        local_root = _app_directory(Path(os.environ.get("LOCALAPPDATA", project_root)), "LOCAL_DIR")
 
         return cls(
             source_root=source_root,

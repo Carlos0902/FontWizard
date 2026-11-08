@@ -105,7 +105,7 @@ def validate_selection(selection, source_labels=None, weights=None):
 
         if weight.startswith("consolas_"):
             mono_family_names.add(metadata.family_name)
-        else:
+        elif not weight.startswith("yahei_"):
             ui_family_names.add(metadata.family_name)
 
         system_filename = active_weights[weight]
@@ -129,7 +129,7 @@ def validate_selection(selection, source_labels=None, weights=None):
 
     if any(weight.startswith("yahei_") for weight in active_weights):
         summary.warnings.append(
-            "中文兼容模式会替换系统微软雅黑/微软雅黑 UI，影响 QQ、微信及其他使用这些字体的软件。"
+            "此操作会替换系统微软雅黑和微软雅黑 UI，影响使用这些系统字体的界面。"
             "需重启 Windows；应用内置字体可能不受影响。常用字检查不代表完整字库覆盖。"
         )
 

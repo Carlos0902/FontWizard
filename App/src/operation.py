@@ -44,6 +44,7 @@ class FontWorkflow:
         self.active_fonts_root = Path(active_fonts_root or FONTS_DIR)
         self.include_chinese = False
         self.include_explorer = False
+        self.font_scale = 100
 
     def _explorer_service(self):
         from explorer_fonts import ExplorerFontService
@@ -68,10 +69,10 @@ class FontWorkflow:
     def apply(self, selection, source_labels=None, progress=None):
         report = self.preflight.collect()
         if not report.is_supported:
-            return OperationResult(False, "Font Wizard supports Windows 10 (build 10240+) and Windows 11.", report.issues, report.warnings)
+            return OperationResult(False, "Fontscape supports Windows 10 (build 10240+) and Windows 11.", report.issues, report.warnings)
 
         if not report.is_admin:
-            return OperationResult(False, "Run Font Wizard as Administrator before applying fonts.", report.issues, report.warnings)
+            return OperationResult(False, "Run Fontscape as Administrator before applying fonts.", report.issues, report.warnings)
 
         if report.install_state == "pending_reboot_recovery":
             return OperationResult(
@@ -148,6 +149,7 @@ class FontWorkflow:
                 "status": "pending_reboot_apply",
                 "include_chinese": self.include_chinese,
                 "include_explorer": self.include_explorer,
+                "font_scale": self.font_scale,
                 "fonts": manifest,
                 "backed_up_count": backed_count,
                 "applied_at": iso_now(),
@@ -191,7 +193,7 @@ class FontWorkflow:
     def restore(self, progress=None):
         report = self.preflight.collect()
         if not report.is_admin:
-            return OperationResult(False, "Run Font Wizard as Administrator before restoring fonts.", report.issues, report.warnings)
+            return OperationResult(False, "Run Fontscape as Administrator before restoring fonts.", report.issues, report.warnings)
 
         system_files = self._system_font_files()
 
@@ -339,7 +341,7 @@ def build_artifacts(workflow, entries, stage_dir):
 
         if entry.system_filename.lower().endswith(".ttc"):
             from chinese_fonts import build_chinese_collection
-            build_chinese_collection(entry.source_path, segoe_path, output_path)
+            build_chinese_collection(entry.source_path, segoe_path, output_path, workflow.font_scale)
             with TTCollection(segoe_path) as donor, TTCollection(output_path) as built:
                 if len(donor.fonts) != len(built.fonts):
                     raise RuntimeError(f"字体集合成员数量不一致：{output_path.name}")
@@ -347,9 +349,9 @@ def build_artifacts(workflow, entries, stage_dir):
                     _verify_build_output(output_path, segoe_path, index)
         elif entry.system_filename.lower() == "seguivar.ttf":
             from font_generation import build_variable_font
-            build_variable_font(entry.source_path, segoe_path, output_path)
+            build_variable_font(entry.source_path, segoe_path, output_path, workflow.font_scale)
         else:
-            build_font(entry.source_path, segoe_path, output_path)
+            build_font(entry.source_path, segoe_path, output_path, workflow.font_scale)
         if not entry.system_filename.lower().endswith(".ttc"):
             _verify_build_output(output_path, segoe_path)
 
@@ -383,7 +385,7 @@ def build_artifacts(workflow, entries, stage_dir):
                 else:
                     companion_sys_path = workflow.identity_fonts_root / companion_file
                 companion_out_path = stage_dir / companion_file
-                build_font(mono_regular_entry.source_path, companion_sys_path, companion_out_path)
+                build_font(mono_regular_entry.source_path, companion_sys_path, companion_out_path, workflow.font_scale)
                 _verify_build_output(companion_out_path, companion_sys_path)
                 companion_key = f"mono_companion_{companion_file.lower().replace('.', '_')}"
                 artifacts[companion_key] = {

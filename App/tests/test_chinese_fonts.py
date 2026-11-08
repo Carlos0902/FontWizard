@@ -12,14 +12,16 @@ from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.ttLib import TTCollection, TTFont
 
 from app_state import ManagedStateStore
-from chinese_fonts import CJK_SAMPLE, build_chinese_collection, validate_chinese_source
+from chinese_fonts import COMMON_UI_TEXT, build_chinese_collection, validate_chinese_source
+from font_generation import build_font
+from font_detection import detect_weight_overrides, infer_family_label_from_strings
 from fonts import FontPlanEntry, ValidationSummary, validate_selection
 from operation import FontWorkflow, build_artifacts
 from settings import CHINESE_WEIGHTS, get_system_weights
 
 
 def make_font(path, family, weight=400, chinese=True):
-    chars = set("ABC " + (CJK_SAMPLE if chinese else ""))
+    chars = set("ABC " + (COMMON_UI_TEXT if chinese else ""))
     cmap = {ord(char): f"uni{ord(char):04X}" for char in chars}
     names = [".notdef", *cmap.values()]
     builder = FontBuilder(1000, isTTF=True)
@@ -80,18 +82,37 @@ class ChineseFontTests(unittest.TestCase):
         summary = validate_selection({"regular": str(latin)}, weights=CHINESE_WEIGHTS)
         self.assertFalse(summary.ok)
 
+    def test_chinese_auto_detection_skips_fonts_without_ui_glyphs(self):
+        latin = self.root / "latin.ttf"
+        make_font(latin, "界面字体", chinese=False)
+        self.assertEqual(infer_family_label_from_strings("界面字体"), "界面字体")
+        detected = detect_weight_overrides(latin, weights={"yahei_regular": "msyh.ttc"})
+        self.assertNotEqual(detected["yahei_regular"], str(latin))
+        validate_chinese_source(detected["yahei_regular"])
+
     def test_artifact_pipeline_verifies_all_collection_faces(self):
         stage = self.root / "stage"
         stage.mkdir()
         backup = self.root / "backup"
         backup.mkdir()
         workflow = SimpleNamespace(paths=SimpleNamespace(backup_root=backup),
-                                   identity_fonts_root=self.root)
+                                   identity_fonts_root=self.root, font_scale=125)
         entry = FontPlanEntry("yahei_regular", self.source, "manual", "msyh.ttc",
                               "Microsoft YaHei", "msyh.ttc", "Custom Chinese", "Custom Chinese")
         artifacts = build_artifacts(workflow, [entry], stage)
         self.assertTrue((stage / "msyh.ttc").is_file())
         self.assertEqual(len(artifacts["yahei_regular"]["hash"]), 64)
+        with TTCollection(stage / "msyh.ttc") as result:
+            self.assertEqual([font["head"].unitsPerEm for font in result.fonts], [800, 800])
+
+    def test_scaled_static_font_keeps_design_units_and_changes_rendered_size(self):
+        output = self.root / "scaled.ttf"
+        donor = self.root / "MicrosoftYaHei.ttf"
+        build_font(self.source, donor, output, font_scale=125)
+        with TTFont(self.source) as source, TTFont(output) as result:
+            self.assertEqual(result["head"].unitsPerEm, 800)
+            self.assertEqual(result["hmtx"].metrics, source["hmtx"].metrics)
+            self.assertEqual(result["name"].getBestFamilyName(), "Microsoft YaHei")
 
     def workflow(self):
         backup = self.root / "backup"

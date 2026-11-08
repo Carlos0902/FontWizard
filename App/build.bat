@@ -30,15 +30,15 @@ if errorlevel 1 (
 echo Cleaning old build outputs...
 if exist "build" rmdir /s /q "build"
 if exist "dist" rmdir /s /q "dist"
-if exist "FontWizard.spec" del "FontWizard.spec"
-if exist "Font Wizard.spec" del "Font Wizard.spec"
+if exist "Fontscape.spec" del "Fontscape.spec"
 
-echo Building Font Wizard...
-%PYTHON_EXE% -m PyInstaller --noconfirm --onefile --windowed --name "FontWizard" ^
+echo Building Fontscape...
+%PYTHON_EXE% -m PyInstaller --noconfirm --onefile --windowed --name "Fontscape" ^
     --manifest "fontwizard.manifest" --uac-admin ^
-    --add-data "src/assets;assets" ^
+    --add-data "src/assets/fontscape.png;assets" ^
+    --add-data "src/assets/github-mark.svg;assets" ^
     --collect-submodules fontTools.ttLib.tables ^
-    --icon="src/assets/font-wizard.ico" ^
+    --icon="src/assets/fontscape.ico" ^
     --version-file="fontwizard_version_info.txt" ^
     "src/main.py"
 if errorlevel 1 (

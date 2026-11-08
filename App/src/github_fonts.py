@@ -54,7 +54,7 @@ def _api_request(url: str) -> dict:
     req = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "FontWizard",
+            "User-Agent": "Fontscape",
             "Accept": "application/vnd.github+json",
         },
     )
@@ -179,7 +179,7 @@ def download_remote_font(
 
     req = urllib.request.Request(
         font.download_url,
-        headers={"User-Agent": "FontWizard"},
+        headers={"User-Agent": "Fontscape"},
     )
     tmp = target.with_suffix(f"{target.suffix}.{os.getpid()}_{uuid.uuid4().hex[:6]}.part")
     expected = int(font.size or 0)

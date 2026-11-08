@@ -1,17 +1,17 @@
-; Font Wizard — Inno Setup installer script.
+; Fontscape — Inno Setup installer script.
 ; Requires Inno Setup 6 (ISCC.exe). Built via App\build.bat.
-; Source exe (dist\FontWizard.exe) is produced by PyInstaller first.
+; Source exe (dist\Fontscape.exe) is produced by PyInstaller first.
 
-#define MyAppName "Font Wizard"
-#define MyAppExeName "FontWizard.exe"
+#define MyAppName "Fontscape"
+#define MyAppExeName "Fontscape.exe"
 #ifndef MyAppVersion
-#define MyAppVersion "5.0.0"
+#define MyAppVersion "5.0.1"
 #endif
 #ifndef MyAppVersionFull
-#define MyAppVersionFull "5.0.0.0"
+#define MyAppVersionFull "5.0.1.0"
 #endif
-#define MyAppPublisher "karnyadavdev"
-#define MyAppURL "https://github.com/karnyadavdev/FontWizard"
+#define MyAppPublisher "Fontscape"
+#define MyAppURL "https://github.com/Carlos0902/FontWizard"
 
 [Setup]
 AppId={{8980A84E-5425-40CF-9222-DD3BD3C0F70E}
@@ -22,21 +22,17 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}/issues
 AppUpdatesURL={#MyAppURL}/releases
-AppComments=Customize Windows 11 & 10 system font completely with 100% system coverage
-DefaultDirName={autopf}\Font Wizard
+AppComments=Customize Windows system fonts
+DefaultDirName={autopf}\Fontscape
 DisableProgramGroupPage=yes
 LicenseFile=..\LICENSE
-SetupIconFile=src\assets\font-wizard.ico
+SetupIconFile=src\assets\fontscape.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 OutputDir=dist
-OutputBaseFilename=Font Wizard 5 Setup
+OutputBaseFilename=Fontscape Setup
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern dynamic
-WizardImageFile=src\assets\wizard-image.bmp
-WizardImageFileDynamicDark=src\assets\wizard-image-dark.bmp
-WizardSmallImageFile=src\assets\wizard-small.bmp
-WizardSmallImageFileDynamicDark=src\assets\wizard-small-dark.bmp
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -49,7 +45,7 @@ VersionInfoDescription={#MyAppName} Setup
 VersionInfoProductName={#MyAppName}
 VersionInfoProductVersion={#MyAppVersion}
 VersionInfoCopyright=Copyright (c) 2026 {#MyAppPublisher}
-VersionInfoOriginalFilename=Font Wizard 5 Setup.exe
+VersionInfoOriginalFilename=Fontscape Setup.exe
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"

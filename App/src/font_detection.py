@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
-from fontTools.ttLib import TTFont
+from fontTools.ttLib import TTFont, TTLibError
 
 from settings import FONT_EXTENSIONS, WEIGHT_TARGETS
 
@@ -42,7 +42,7 @@ WEIGHT_REGEX = [
 def _tokenize(value):
     normalized = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", value)
     normalized = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1 \2", normalized)
-    parts = re.split(r"[^a-z0-9]+", normalized.lower())
+    parts = re.split(r"[\W_]+", normalized.lower())
     return [part for part in parts if part]
 
 
@@ -239,6 +239,17 @@ def detect_weight_overrides(primary_path, existing=None, weights=None, manual_ov
     if (primary, primary_metadata) not in all_candidates:
         all_candidates.append((primary, primary_metadata))
 
+    chinese_candidates = []
+    if any(weight.startswith("yahei_") for weight in active_weights):
+        from chinese_fonts import validate_chinese_source
+
+        for candidate, metadata in all_candidates:
+            try:
+                validate_chinese_source(candidate)
+            except (ValueError, OSError, TTLibError):
+                continue
+            chinese_candidates.append((candidate, metadata))
+
     for target_weight in active_weights:
         if target_weight == "variable":
             if target_weight in manual_overrides and manual_overrides[target_weight]:
@@ -280,7 +291,8 @@ def detect_weight_overrides(primary_path, existing=None, weights=None, manual_ov
         best_cand = None
         best_score = float("-inf")
 
-        for candidate, metadata in all_candidates:
+        candidates = chinese_candidates if target_weight.startswith("yahei_") else all_candidates
+        for candidate, metadata in candidates:
             score = _score_candidate(
                 candidate,
                 metadata,

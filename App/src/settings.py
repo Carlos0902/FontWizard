@@ -3,8 +3,8 @@ from pathlib import Path
 import uuid
 import hashlib
 
-APP_NAME = "Font Wizard"
-APP_GITHUB_URL = "https://github.com/karnyadavdev/FontWizard"
+APP_NAME = "Fontscape"
+APP_GITHUB_URL = "https://github.com/Carlos0902/FontWizard"
 SCHEMA_VERSION = 1
 
 # Optional GitHub repo to fetch curated .ttf fonts from.

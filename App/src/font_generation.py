@@ -2,6 +2,22 @@ from pathlib import Path
 
 from fontTools.ttLib import TTFont
 
+MIN_FONT_SCALE = 100
+MAX_FONT_SCALE = 125
+
+
+def apply_font_scale(font, percent):
+    if type(percent) is not int or not MIN_FONT_SCALE <= percent <= MAX_FONT_SCALE:
+        raise ValueError("Font size must be between 100% and 125%.")
+    if percent == 100:
+        return
+    # A smaller em makes the existing outlines and metrics larger at the same point size.
+    head = font["head"]
+    head.unitsPerEm = max(16, round(head.unitsPerEm * 100 / percent))
+    for tag in ("hdmx", "LTSH", "VDMX"):
+        if tag in font:
+            del font[tag]
+
 
 def read_segoe_identity(segoe_path, font_number=-1):
     font = TTFont(segoe_path, fontNumber=font_number)
@@ -119,7 +135,7 @@ def apply_identity(font, identity):
     font["post"].italicAngle = identity["post_italicAngle"]
 
 
-def build_font(source_path, segoe_path, output_path):
+def build_font(source_path, segoe_path, output_path, font_scale=100):
     source_path = Path(source_path)
     segoe_path = Path(segoe_path)
     output_path = Path(output_path)
@@ -133,6 +149,7 @@ def build_font(source_path, segoe_path, output_path):
     font = TTFont(source_path)
     try:
         apply_identity(font, identity)
+        apply_font_scale(font, font_scale)
         font.save(str(output_path))
     finally:
         font.close()
@@ -140,12 +157,12 @@ def build_font(source_path, segoe_path, output_path):
     return str(output_path)
 
 
-def build_variable_font(source_path, segoe_var_path, output_path):
+def build_variable_font(source_path, segoe_var_path, output_path, font_scale=100):
     """Build a clean static font containing Segoe UI Variable's identity.
 
     Tricking Windows 11 into using a user's static font when Segoe UI Variable is requested
     is achieved by generating a valid static TrueType font with Segoe UI Variable's name
     and OS/2 tables. Splicing partial variable tables without gvar is invalid per OpenType spec.
     """
-    return build_font(source_path, segoe_var_path, output_path)
+    return build_font(source_path, segoe_var_path, output_path, font_scale)
 

@@ -4,6 +4,7 @@ from pathlib import Path
 from paths import RuntimePaths
 from checks import PreflightService
 from font_detection import detect_weight_overrides, inspect_font
+from font_generation import MAX_FONT_SCALE, MIN_FONT_SCALE
 from operation import FontWorkflow
 from app_state import ManagedStateStore
 from win_registry import WindowsFontRegistry
@@ -32,6 +33,9 @@ class FontWizardController:
         saved = self.state_store.load_or_empty().get("install", {})
         self.workflow.include_chinese = bool(saved.get("include_chinese", False))
         self.workflow.include_explorer = bool(saved.get("include_explorer", False))
+        font_scale = saved.get("font_scale", 100)
+        if type(font_scale) is int and MIN_FONT_SCALE <= font_scale <= MAX_FONT_SCALE:
+            self.workflow.font_scale = font_scale
         system_weights = self.workflow._system_weights()
         self.selection = SelectionState(
             paths={w: None for w in system_weights},

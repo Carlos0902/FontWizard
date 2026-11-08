@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
     QProgressBar,
     QScrollArea,
     QSizePolicy,
+    QSpinBox,
     QVBoxLayout,
     QWidget,
     QLayout,
@@ -33,6 +34,7 @@ from PySide6.QtWidgets import (
 from settings import APP_GITHUB_URL, APP_NAME, WEIGHT_TARGETS, GITHUB_FONTS_REPO, GITHUB_FONTS_BRANCH, GITHUB_FONTS_URL
 from core import FontWizardController
 from font_detection import inspect_font
+from font_generation import MAX_FONT_SCALE, MIN_FONT_SCALE
 from operation import OperationResult
 
 WM_SETTINGCHANGE = 0x001A
@@ -761,9 +763,9 @@ class WeightCard(QFrame):
 
         if weight == "variable":
             is_var_file = getattr(metadata, "is_variable", False)
-            title_str = "Variable UI Font"
+            title_str = "可变界面字体"
         elif weight.startswith("consolas_"):
-            title_str = "Monospaced " + weight.replace("consolas_", "").replace("_", " ").title()
+            title_str = "等宽 · " + weight.replace("consolas_", "").replace("_", " ").title()
         elif weight.startswith("yahei_"):
             title_str = {"yahei_regular": "中文 · 常规", "yahei_bold": "中文 · 粗体", "yahei_light": "中文 · 细体"}[weight]
         else:
@@ -794,7 +796,7 @@ class WeightCard(QFrame):
         is_mono = weight.startswith("consolas_")
         sample_text = "The quick brown fox jumps over the lazy dog"
         if weight.startswith("yahei_"):
-            sample_text = "中文字体预览：QQ / 微信聊天，你好世界！"
+            sample_text = "文件资源管理器 · 最近使用：你好，世界！123"
         self.preview = QLabel(sample_text)
         self.preview.setObjectName("VariantPreview")
         self.preview.setWordWrap(True)
@@ -809,13 +811,13 @@ class WeightCard(QFrame):
 
         style_str = "italic" if detected_italic else "normal"
         font_family_rule = f"font-family: '{font_family_name}', monospace;" if is_mono and font_family_name else (f"font-family: '{font_family_name}', sans-serif;" if font_family_name else "")
-        self.preview.setStyleSheet(
+        self._preview_style = (
             f"color: {colors['text_primary']}; "
-            f"font-size: 16px; "
             f"{font_family_rule} "
             f"font-weight: {detected_weight}; "
             f"font-style: {style_str};"
         )
+        self.set_preview_scale(100)
         layout.addWidget(self.preview)
 
         filename_str = Path(font_path).name
@@ -831,6 +833,9 @@ class WeightCard(QFrame):
         meta.setStyleSheet(f"color: {colors['text_muted']}; font-size: 11px;")
         meta.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(meta)
+
+    def set_preview_scale(self, percent):
+        self.preview.setStyleSheet(f"{self._preview_style} font-size: {12 * percent / 100:g}pt;")
 
     def cleanup(self):
         if hasattr(self, "preview") and self.preview:
@@ -963,9 +968,9 @@ class LocalFontsGuide(QWidget):
     """Informational guide displayed in the empty space when no font is selected and cloud panel is closed."""
 
     POINTS = (
-        "Keep all .ttf files in a folder and select Regular file, all other weights including mono will be auto detected",
-        "If your font lacks some weights like black italic or variable, closest suited weights will be selected for them",
-        "You have full control over weights detection, you can override all selected weights with your choice",
+        "将同一家族的 .ttf 放在同一文件夹，选择常规字重后会自动匹配其他样式。",
+        "开启系统中文字体替换后，优先从同目录中选用覆盖常用汉字的字体。",
+        "可在预览卡片中为每种字重手动更换字体。",
     )
 
     def __init__(self, parent=None):
@@ -986,7 +991,7 @@ class LocalFontsGuide(QWidget):
         inner_lay.setContentsMargins(0, 0, 0, 0)
         inner_lay.setSpacing(14)
 
-        self._title_lbl = QLabel("Guide to Applying Local Fonts")
+        self._title_lbl = QLabel("使用本地字体")
         self._title_lbl.setAlignment(Qt.AlignCenter)
         self._title_lbl.setStyleSheet("font-size: 15px; font-weight: 600; font-family: 'Segoe UI';")
         inner_lay.addWidget(self._title_lbl)
@@ -1235,27 +1240,27 @@ class CloudFolderPanel(QFrame):
 
         header = QHBoxLayout()
         header.setSpacing(8)
-        title = QLabel("Download fonts to apply")
+        title = QLabel("在线字体库")
         title.setObjectName("CloudTitle")
         header.addWidget(title)
         header.addStretch(1)
         refresh_btn = QPushButton(chr(0xE7AD))
         refresh_btn.setObjectName("IconBtnRefresh")
         refresh_btn.setCursor(Qt.PointingHandCursor)
-        refresh_btn.setToolTip("Refresh folder list")
-        refresh_btn.setAccessibleName("Refresh folder list")
+        refresh_btn.setToolTip("刷新字体列表")
+        refresh_btn.setAccessibleName("刷新字体列表")
         refresh_btn.clicked.connect(lambda: self.start_fetch(force=True))
         header.addWidget(refresh_btn)
         close_btn = QPushButton(chr(0xE8BB))
         close_btn.setObjectName("IconBtn")
         close_btn.setCursor(Qt.PointingHandCursor)
-        close_btn.setToolTip("Close")
+        close_btn.setToolTip("关闭")
         close_btn.setAccessibleName("Close cloud panel")
         close_btn.clicked.connect(self._on_close)
         header.addWidget(close_btn)
         layout.addLayout(header)
 
-        self.status_lbl = QLabel("Loading folder list…")
+        self.status_lbl = QLabel("正在加载字体列表…")
         self.status_lbl.setObjectName("CloudMeta")
         self.status_lbl.setWordWrap(True)
         layout.addWidget(self.status_lbl)
@@ -1847,10 +1852,10 @@ class FontWizardApp(QMainWindow):
         self._action_buttons = ()
         self.controller = FontWizardController()
         self.setWindowTitle(APP_NAME)
-        icon_path = get_asset_path("font-wizard-icon.png")
+        icon_path = get_asset_path("fontscape.png")
         if icon_path.exists():
             self.setWindowIcon(QIcon(str(icon_path)))
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(f"fontwizard.{APP_NAME}.1")
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("Fontscape.Windows")
 
         self.setMinimumSize(980, 600)
         self.resize(1050, 650)
@@ -1915,7 +1920,7 @@ class FontWizardApp(QMainWindow):
         logo_size = 64
         logo_lbl.setFixedSize(QSize(logo_size, logo_size))
         logo_lbl.setAlignment(Qt.AlignCenter)
-        logo_path = get_asset_path("font-wizard-icon.png")
+        logo_path = get_asset_path("fontscape.png")
         if logo_path.exists():
             pixmap = QPixmap(str(logo_path))
             dpr = self.devicePixelRatioF()
@@ -1959,7 +1964,7 @@ class FontWizardApp(QMainWindow):
         title_row_layout.addWidget(self.github_btn, 0, Qt.AlignBottom)
         text_layout.addWidget(title_row, 0, Qt.AlignLeft)
 
-        subtitle = QLabel("Customize your system fonts")
+        subtitle = QLabel("自定义 Windows 系统字体")
         subtitle.setObjectName("AppSubtitle")
         subtitle.setFixedHeight(20)
         subtitle.setAlignment(Qt.AlignLeft | Qt.AlignTop)
@@ -1984,11 +1989,11 @@ class FontWizardApp(QMainWindow):
         summary_layout.setContentsMargins(0, 0, 0, 0)
         summary_layout.setSpacing(2)
 
-        title = QLabel("Interface Font")
+        title = QLabel("界面字体")
         title.setObjectName("CardTitle")
         summary_layout.addWidget(title)
 
-        self.cur_font_lbl = QLabel("No font selected")
+        self.cur_font_lbl = QLabel("尚未选择字体")
         self.cur_font_lbl.setObjectName("SelectedFont")
         self.cur_font_lbl.setWordWrap(True)
         summary_layout.addWidget(self.cur_font_lbl)
@@ -2000,13 +2005,13 @@ class FontWizardApp(QMainWindow):
         self.actions_layout.setContentsMargins(0, 0, 0, 0)
         self.actions_layout.setSpacing(10)
 
-        self.local_btn = IconActionButton(chr(0xE8E5), 18, "ActionIconLocal", "Local Fonts")
-        self.fetch_btn = IconActionButton(chr(0xE753), 24, "ActionIconFetch", "Fetch Fonts")
-        self.apply_btn = QPushButton("Apply Changes")
-        self.restore_btn = QPushButton("Restore Original Fonts")
+        self.local_btn = IconActionButton(chr(0xE8E5), 18, "ActionIconLocal", "本地字体")
+        self.fetch_btn = IconActionButton(chr(0xE753), 24, "ActionIconFetch", "在线字体")
+        self.apply_btn = QPushButton("应用字体")
+        self.restore_btn = QPushButton("恢复原始字体")
 
-        self.local_btn.setToolTip("From this PC")
-        self.fetch_btn.setToolTip("From cloud")
+        self.local_btn.setToolTip("选择本地字体")
+        self.fetch_btn.setToolTip("从在线字体库下载")
         for button in (self.apply_btn, self.restore_btn):
             button.setFixedHeight(34)
             button.setMinimumWidth(150)
@@ -2029,7 +2034,7 @@ class FontWizardApp(QMainWindow):
         v_layout.setContentsMargins(0, 0, 0, 0)
         v_layout.setSpacing(12)
 
-        text_lbl = QLabel("Style Variants", objectName="SectionHeader")
+        text_lbl = QLabel("字重与样式", objectName="SectionHeader")
         self.variant_count_lbl = QLabel("")
         self.variant_count_lbl.setObjectName("SectionMeta")
         v_layout.addWidget(text_lbl)
@@ -2043,9 +2048,9 @@ class FontWizardApp(QMainWindow):
         empty_layout = QVBoxLayout(self.empty_variants)
         empty_layout.setContentsMargins(24, 24, 24, 24)
         empty_layout.setSpacing(8)
-        empty_title = QLabel("No style variants yet")
+        empty_title = QLabel("暂无样式")
         empty_title.setObjectName("CardTitle")
-        empty_desc = QLabel("Select a font to preview detected styles.")
+        empty_desc = QLabel("选择字体后可预览各字重和样式。")
         empty_desc.setObjectName("CardDesc")
         empty_desc.setWordWrap(True)
         empty_layout.addWidget(empty_title)
@@ -2082,14 +2087,14 @@ class FontWizardApp(QMainWindow):
         layout = QVBoxLayout(row)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
-        self.chinese_option = QCheckBox("中文字体兼容（QQ / 微信）")
+        self.chinese_option = QCheckBox("替换系统中文字体（微软雅黑）")
         self.chinese_option.setChecked(self.controller.workflow.include_chinese)
         self.chinese_option.setToolTip(
             "替换系统微软雅黑和微软雅黑 UI 的常规、粗体、细体，需重启 Windows。\n"
-            "其他使用这些字体的软件也会变化；应用内置字体不保证生效。\n"
-            "取消勾选仅停止后续替换，已应用的中文字体需通过 Restore Original Fonts 恢复。"
+            "使用系统微软雅黑的界面会受到影响。微信输入框若使用内置 WeChat Sans，将保留其字形。\n"
+            "取消勾选仅停止后续替换，已应用的中文字体需通过 「恢复原始字体」恢复。"
         )
-        note = QLabel("替换系统微软雅黑，影响其他软件；请选择含中文的静态 TTF。重启后生效。")
+        note = QLabel("请选择含中文的静态 TTF，重启后生效。微信自带的字体资源由微信管理。")
         note.setObjectName("CardDesc")
         note.setWordWrap(True)
         layout.addWidget(self.chinese_option)
@@ -2099,9 +2104,22 @@ class FontWizardApp(QMainWindow):
         self.explorer_option.setToolTip(
             "让文件列表、桌面图标及系统菜单字体跟随所选界面字体，保留字号与字重。\n"
             "会影响其他使用系统菜单/消息字体的软件；完整效果需重启 Windows。\n"
-            "原设置自动备份；恢复请使用 Restore Original Fonts，取消勾选不会自动恢复。"
+            "原设置自动备份；恢复请使用「恢复原始字体」，取消勾选不会自动恢复。"
         )
         layout.addWidget(self.explorer_option)
+        size_row = QHBoxLayout()
+        size_label = QLabel("替换字体大小")
+        self.font_scale = QSpinBox()
+        self.font_scale.setRange(MIN_FONT_SCALE, MAX_FONT_SCALE)
+        self.font_scale.setSuffix("%")
+        self.font_scale.setValue(self.controller.workflow.font_scale)
+        self.font_scale.setToolTip("调整替换字体的相对大小。下方样例实时更新，实际效果因应用布局而异。")
+        size_label.setBuddy(self.font_scale)
+        size_row.addWidget(size_label)
+        size_row.addWidget(self.font_scale)
+        size_row.addStretch()
+        layout.addLayout(size_row)
+        self.font_scale.valueChanged.connect(self._on_font_scale)
         self.explorer_option.toggled.connect(self._on_explorer_option)
         self.main_layout.addWidget(row)
         self.chinese_option.toggled.connect(self._on_chinese_option)
@@ -2123,6 +2141,13 @@ class FontWizardApp(QMainWindow):
         self.controller.workflow.include_explorer = bool(enabled)
         self._selection_dirty = True
         self.refresh_all()
+
+    def _on_font_scale(self, percent):
+        self.controller.workflow.font_scale = percent
+        self._selection_dirty = True
+        self._disarm()
+        for index in range(self.weight_layout.count()):
+            self.weight_layout.itemAt(index).widget().set_preview_scale(percent)
 
     def _set_button_role(self, button, role):
         if button.property("buttonRole") == role:
@@ -2227,7 +2252,7 @@ class FontWizardApp(QMainWindow):
         self._star_active = True
         self._star_timer.start(self._STAR_SHOW_MS)
         button = self.github_btn
-        button.setAccessibleName("Star Font Wizard on GitHub")
+        button.setAccessibleName("在 GitHub 查看 Fontscape")
         effect = QGraphicsOpacityEffect(button)
         button.setGraphicsEffect(effect)
         fade_out = QPropertyAnimation(effect, b"opacity", self)
@@ -2681,9 +2706,9 @@ class FontWizardApp(QMainWindow):
     def _on_local_pick(self):
         font_path, _ = QFileDialog.getOpenFileName(
             self,
-            "Select Static TrueType Font",
+            "选择静态 TrueType 字体",
             "",
-            "Static TrueType fonts (*.ttf)",
+            "静态 TrueType 字体 (*.ttf)",
         )
         if not font_path:
             return
@@ -2697,7 +2722,7 @@ class FontWizardApp(QMainWindow):
         try:
             self.controller.set_regular_font(font_path)
         except Exception as exc:
-            QMessageBox.warning(self, "Font not supported", str(exc))
+            QMessageBox.warning(self, "不支持此字体", str(exc))
             return False
         self._selection_dirty = True
         self._hide_applied_variants = False
@@ -2753,6 +2778,7 @@ class FontWizardApp(QMainWindow):
             button.setEnabled(False)
         self.chinese_option.setEnabled(False)
         self.explorer_option.setEnabled(False)
+        self.font_scale.setEnabled(False)
         colors = get_theme_colors(self.is_dark)
         cover = QLabel(text, btn)
         cover.setAlignment(Qt.AlignCenter)
@@ -2794,9 +2820,9 @@ class FontWizardApp(QMainWindow):
             self._selection_dirty = False
 
         if not result.success:
-            QMessageBox.warning(self, "Result", result.message)
+            QMessageBox.warning(self, "操作结果", result.message)
         elif result.warnings:
-            QMessageBox.information(self, "Result", result.message + "\n\n" + "\n".join(result.warnings))
+            QMessageBox.information(self, "操作结果", result.message + "\n\n" + "\n".join(result.warnings))
         self.refresh_all()
         if btn == self.apply_btn and result.success:
             self._morph_to_star()
@@ -2817,7 +2843,7 @@ class FontWizardApp(QMainWindow):
         try:
             subprocess.run(["shutdown", "/r", "/t", "0"], check=True)
         except Exception as exc:
-            QMessageBox.warning(self, "Restart Failed", f"Could not initiate Windows restart: {exc}\n\nPlease restart your computer manually to finish the setup.")
+            QMessageBox.warning(self, "重启失败", f"Could not initiate Windows restart: {exc}\n\nPlease restart your computer manually to finish the setup.")
 
     def refresh_all(self):
         self._disarm()
@@ -2849,13 +2875,14 @@ class FontWizardApp(QMainWindow):
         is_recovery_pending = report.install_state == "pending_reboot_recovery"
         self.chinese_option.setEnabled(not is_pending)
         self.explorer_option.setEnabled(not is_pending)
+        self.font_scale.setEnabled(not is_pending)
 
         if is_recovery_pending:
             self._browse_action = "select"
             self._apply_action = "restart"
             self._restore_action = "restart"
-            apply_text = "Restart Windows"
-            restore_text = "Restart Windows"
+            apply_text = "重启 Windows"
+            restore_text = "重启 Windows"
             apply_visible = True
             restore_visible = False
             apply_available = True
@@ -2865,13 +2892,13 @@ class FontWizardApp(QMainWindow):
             self._restore_action = "restore"
             if has_selected_font and self._selection_dirty:
                 self._apply_action = "apply"
-                apply_text = "Apply Changes"
+                apply_text = "应用字体"
                 apply_available = can_apply
             else:
                 self._apply_action = "restart"
-                apply_text = "Restart Windows"
+                apply_text = "重启 Windows"
                 apply_available = True
-            restore_text = "Restore Original Fonts"
+            restore_text = "恢复原始字体"
             apply_visible = True
             restore_visible = False
             restore_available = False
@@ -2879,9 +2906,9 @@ class FontWizardApp(QMainWindow):
             self._browse_action = "select"
             self._apply_action = "apply"
             self._restore_action = "restore"
-            apply_text = "Apply Changes"
+            apply_text = "应用字体"
             apply_available = can_apply
-            restore_text = "Restore Original Fonts"
+            restore_text = "恢复原始字体"
             apply_visible = has_selected_font
             restore_visible = report.install_state in ("managed", "partial")
             apply_available = apply_visible and can_apply
@@ -2902,7 +2929,7 @@ class FontWizardApp(QMainWindow):
 
         if not can_apply and self._apply_action != "restart":
             if not regular_font:
-                self.apply_btn.setToolTip("Select a font to apply.")
+                self.apply_btn.setToolTip("请先选择要应用的字体。")
             else:
                 self.apply_btn.setToolTip(
                     "\n".join(report.issues) if report.issues else "Cannot apply changes right now."
@@ -2911,7 +2938,7 @@ class FontWizardApp(QMainWindow):
             self.apply_btn.setToolTip("")
 
         if not self.restore_btn.isEnabled() and self._restore_action != "restart":
-            self.restore_btn.setToolTip("Cannot restore fonts right now.")
+            self.restore_btn.setToolTip("当前无法恢复字体。")
         else:
             self.restore_btn.setToolTip("")
 
@@ -2924,7 +2951,7 @@ class FontWizardApp(QMainWindow):
         self._set_button_role(self.apply_btn, apply_role)
         self._set_button_role(self.restore_btn, restore_role)
 
-        self.cur_font_lbl.setText(Path(regular_font).name if regular_font else "No font selected")
+        self.cur_font_lbl.setText(Path(regular_font).name if regular_font else "尚未选择字体")
 
         cards_sig = (
             tuple(sorted((key, str(value)) for key, value in self.controller.selection.paths.items())),
@@ -2947,7 +2974,7 @@ class FontWizardApp(QMainWindow):
             current_path = self.controller.selection.paths.get(w) or self.controller.selection.paths.get("regular") or "."
             start_dir = str(Path(current_path).parent)
             if w == "variable":
-                display_name = "Variable UI Font"
+                display_name = "可变界面字体"
             else:
                 display_name = w.replace("consolas_", "Consolas ").replace("_", " ").title()
             chosen_file, _ = QFileDialog.getOpenFileName(
@@ -2962,7 +2989,7 @@ class FontWizardApp(QMainWindow):
                     self._selection_dirty = True
                     self.refresh_all()
                 except Exception as exc:
-                    QMessageBox.warning(self, "Invalid Font", str(exc))
+                    QMessageBox.warning(self, "字体无效", str(exc))
 
         def _handle_card_reset(w):
             self.controller.reset_card_override(w)
@@ -2983,6 +3010,7 @@ class FontWizardApp(QMainWindow):
                             on_change=_handle_card_change,
                             on_reset=_handle_card_reset,
                         )
+                        card.set_preview_scale(self.controller.workflow.font_scale)
                         self.weight_layout.addWidget(card)
                         card.show()
                         cards_added += 1
@@ -2997,7 +3025,7 @@ class FontWizardApp(QMainWindow):
             and not getattr(self, "_cloud_open", False)
         )
         has_variants = show_variant_section and cards_added > 0
-        self.variant_count_lbl.setText(f"{cards_added} styles" if has_variants else "No preview")
+        self.variant_count_lbl.setText(f"{cards_added} 种样式" if has_variants else "暂无预览")
 
         self.variants_header.setVisible(show_variant_section)
         self.empty_variants.setVisible(show_variant_section and not has_variants)
