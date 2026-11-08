@@ -14,7 +14,7 @@ from operation_files import (
     schedule_canonical_replacement,
     schedule_canonical_restore,
 )
-from settings import CHINESE_WEIGHTS, FONTS_DIR, default_registry_targets
+from settings import CJK_WEIGHTS, JHENGHEI_WEIGHTS, FONTS_DIR, default_registry_targets
 from app_state import hash_file, iso_now
 
 
@@ -43,6 +43,7 @@ class FontWorkflow:
         self.identity_fonts_root = Path(identity_fonts_root or FONTS_DIR)
         self.active_fonts_root = Path(active_fonts_root or FONTS_DIR)
         self.include_chinese = False
+        self.include_jhenghei = False
         self.include_explorer = False
         self.font_scale = 100
 
@@ -52,7 +53,8 @@ class FontWorkflow:
 
     def _system_weights(self):
         from settings import get_system_weights
-        return get_system_weights(self.identity_fonts_root, include_chinese=self.include_chinese)
+        return get_system_weights(self.identity_fonts_root, include_chinese=self.include_chinese,
+                                  include_jhenghei=self.include_jhenghei)
 
     def _system_font_files(self):
         from settings import get_existing_mono_companions
@@ -83,9 +85,11 @@ class FontWorkflow:
             )
 
         previous_install = self.state_store.load_or_empty().get("install", {})
-        if (report.install_state == "pending_reboot_apply"
-                and bool(previous_install.get("include_chinese")) != self.include_chinese):
-            return OperationResult(False, "请先重启 Windows 完成上次替换，再切换中文兼容模式。")
+        if report.install_state == "pending_reboot_apply" and (
+            bool(previous_install.get("include_chinese")) != self.include_chinese
+            or bool(previous_install.get("include_jhenghei")) != self.include_jhenghei
+        ):
+            return OperationResult(False, "请先重启 Windows 完成上次替换，再切换中文字体选项。")
 
         summary = self.validate(selection, source_labels)
         if not summary.ok:
@@ -97,10 +101,10 @@ class FontWorkflow:
         try:
             self._emit(progress, 5, "Backing up original Windows system fonts...")
             backup_warnings, backed_count = backup_canonical_fonts(self, system_files)
-            if self.include_chinese:
+            if self.include_chinese or self.include_jhenghei:
                 # Never replace a collection without a verified, restorable donor.
                 from winsxs import expected_entry, is_authentic_font
-                for name in CHINESE_WEIGHTS.values():
+                for name in (name for name in system_files if name in CJK_WEIGHTS.values()):
                     backup = self.paths.backup_root / name
                     if not backup.is_file() or not is_authentic_font(backup, expected_entry(name)):
                         raise RuntimeError(f"未找到可验证的原始中文字体备份：{name}。未安排字体替换。")
@@ -120,12 +124,10 @@ class FontWorkflow:
 
             self._emit(progress, 75, "Scheduling physical in-place replacement on boot...")
             manifest, schedule_warnings = schedule_canonical_replacement(self, artifacts)
-            if not self.include_chinese:
-                # Unchecking stops future changes; preserve active Chinese fonts
-                # in the manifest so verification and Recovery still cover them.
-                for key, value in previous_install.get("fonts", {}).items():
-                    if key in CHINESE_WEIGHTS:
-                        manifest.setdefault(key, value)
+            # Keep previously replaced CJK fonts tracked after disabling a mode.
+            for key, value in previous_install.get("fonts", {}).items():
+                if key in CJK_WEIGHTS:
+                    manifest.setdefault(key, value)
 
             self._emit(progress, 88, "Purging system font caches...")
             cache_warnings = purge_system_font_cache()
@@ -148,6 +150,7 @@ class FontWorkflow:
             state["install"] = {
                 "status": "pending_reboot_apply",
                 "include_chinese": self.include_chinese,
+                "include_jhenghei": self.include_jhenghei,
                 "include_explorer": self.include_explorer,
                 "font_scale": self.font_scale,
                 "fonts": manifest,
@@ -199,7 +202,7 @@ class FontWorkflow:
 
         # Recovery must include Chinese fonts even after the option is unchecked
         # or the application has been restarted without a selected source font.
-        for name in CHINESE_WEIGHTS.values():
+        for name in CJK_WEIGHTS.values():
             if (self.paths.backup_root / name).is_file() and name not in system_files:
                 system_files.append(name)
 
@@ -341,12 +344,19 @@ def build_artifacts(workflow, entries, stage_dir):
 
         if entry.system_filename.lower().endswith(".ttc"):
             from chinese_fonts import build_chinese_collection
-            build_chinese_collection(entry.source_path, segoe_path, output_path, workflow.font_scale)
+            preserve_coverage = entry.weight in JHENGHEI_WEIGHTS
+            build_chinese_collection(entry.source_path, segoe_path, output_path, workflow.font_scale,
+                                     preserve_coverage=preserve_coverage)
             with TTCollection(segoe_path) as donor, TTCollection(output_path) as built:
                 if len(donor.fonts) != len(built.fonts):
                     raise RuntimeError(f"字体集合成员数量不一致：{output_path.name}")
                 for index in range(len(donor.fonts)):
                     _verify_build_output(output_path, segoe_path, index)
+                    if preserve_coverage:
+                        cmap = built.fonts[index].getBestCmap()
+                        if any(cmap.get(code) in (None, ".notdef")
+                               for code, name in donor.fonts[index].getBestCmap().items() if name != ".notdef"):
+                            raise RuntimeError(f"字体字符覆盖验证失败：{output_path.name}")
         elif entry.system_filename.lower() == "seguivar.ttf":
             from font_generation import build_variable_font
             build_variable_font(entry.source_path, segoe_path, output_path, workflow.font_scale)

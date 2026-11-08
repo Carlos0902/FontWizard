@@ -32,6 +32,7 @@ class FontWizardController:
         )
         saved = self.state_store.load_or_empty().get("install", {})
         self.workflow.include_chinese = bool(saved.get("include_chinese", False))
+        self.workflow.include_jhenghei = bool(saved.get("include_jhenghei", False))
         self.workflow.include_explorer = bool(saved.get("include_explorer", False))
         font_scale = saved.get("font_scale", 100)
         if type(font_scale) is int and MIN_FONT_SCALE <= font_scale <= MAX_FONT_SCALE:
@@ -76,6 +77,13 @@ class FontWizardController:
 
     def set_include_chinese(self, enabled):
         self.workflow.include_chinese = bool(enabled)
+        self._sync_cjk_selection()
+
+    def set_include_jhenghei(self, enabled):
+        self.workflow.include_jhenghei = bool(enabled)
+        self._sync_cjk_selection()
+
+    def _sync_cjk_selection(self):
         active_weights = self.workflow._system_weights()
         primary = self.selection.paths.get("regular")
         detected = detect_weight_overrides(primary, weights=active_weights) if primary else {}

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from fontTools.ttLib import TTFont, TTLibError
 
-from settings import FONT_EXTENSIONS, WEIGHT_TARGETS
+from settings import CJK_WEIGHTS, FONT_EXTENSIONS, WEIGHT_TARGETS
 
 
 @dataclass
@@ -240,7 +240,7 @@ def detect_weight_overrides(primary_path, existing=None, weights=None, manual_ov
         all_candidates.append((primary, primary_metadata))
 
     chinese_candidates = []
-    if any(weight.startswith("yahei_") for weight in active_weights):
+    if CJK_WEIGHTS.keys() & active_weights.keys():
         from chinese_fonts import validate_chinese_source
 
         for candidate, metadata in all_candidates:
@@ -291,7 +291,7 @@ def detect_weight_overrides(primary_path, existing=None, weights=None, manual_ov
         best_cand = None
         best_score = float("-inf")
 
-        candidates = chinese_candidates if target_weight.startswith("yahei_") else all_candidates
+        candidates = chinese_candidates if target_weight in CJK_WEIGHTS else all_candidates
         for candidate, metadata in candidates:
             score = _score_candidate(
                 candidate,

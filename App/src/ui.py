@@ -25,13 +25,13 @@ from PySide6.QtWidgets import (
     QProgressBar,
     QScrollArea,
     QSizePolicy,
-    QSpinBox,
+    QSlider,
     QVBoxLayout,
     QWidget,
     QLayout,
 )
 
-from settings import APP_GITHUB_URL, APP_NAME, WEIGHT_TARGETS, GITHUB_FONTS_REPO, GITHUB_FONTS_BRANCH, GITHUB_FONTS_URL
+from settings import APP_GITHUB_URL, APP_NAME, CJK_WEIGHTS, WEIGHT_TARGETS
 from core import FontWizardController
 from font_detection import inspect_font
 from font_generation import MAX_FONT_SCALE, MIN_FONT_SCALE
@@ -291,6 +291,13 @@ def get_wizard_stylesheet(is_dark: bool) -> str:
     
     #CardTitle {{ font-weight: 600; font-size: 15px; }}
     #CardDesc {{ color: {colors["text_secondary"]}; font-size: 14px; }}
+    #FontOptions {{
+        background-color: {colors["bg_dialog"]};
+        border: 1px solid {colors["border_card"]};
+        border-radius: 8px;
+    }}
+    #FontOptions QCheckBox {{ color: {colors["text_primary"]}; font-size: 14px; spacing: 8px; }}
+    #FontOptions #ScaleValue {{ color: {colors["text_primary"]}; font-size: 14px; font-weight: 600; }}
     #SelectedFont {{ color: {colors["text_secondary"]}; font-size: 14px; }}
     #VariantPreview {{ color: {colors["text_primary"]}; font-size: 18px; }}
     #VariantMeta {{ color: {colors["text_muted"]}; font-size: 12px; }}
@@ -359,14 +366,6 @@ def get_wizard_stylesheet(is_dark: bool) -> str:
         border: none;
         font-family: 'Segoe MDL2 Assets';
         font-size: 18px;
-        font-weight: 400;
-    }}
-    #ActionButton #ActionIconFetch {{
-        color: {colors["accent_icon"]};
-        background: transparent;
-        border: none;
-        font-family: 'Segoe MDL2 Assets';
-        font-size: 24px;
         font-weight: 400;
     }}
     #ActionButton #ActionText {{
@@ -445,124 +444,6 @@ def get_wizard_stylesheet(is_dark: bool) -> str:
     QScrollBar::handle:vertical:hover {{ background: {colors["text_secondary"]}; }}
     QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ border: none; background: none; height: 0px; }}
     QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{ background: none; }}
-    #CloudPanel {{
-        background-color: {colors["bg_card"]};
-        border: 1px solid {colors["border_card"]};
-        border-radius: 8px;
-    }}
-    #CloudPanel #CloudTitle {{
-        font-weight: 600;
-        font-size: 14px;
-        color: {colors["text_primary"]};
-    }}
-    #CloudPanel #CloudMeta {{
-        color: {colors["text_muted"]};
-        font-size: 12px;
-    }}
-    #CloudPanel QPushButton {{
-        background-color: {colors["bg_button"]};
-        border: 1px solid {colors["border_button"]};
-        border-radius: 4px;
-        color: {colors["text_primary"]};
-        font-family: 'Segoe UI';
-        font-size: 13px;
-        font-weight: 600;
-        padding: 6px 12px;
-    }}
-    #CloudPanel QPushButton:hover {{
-        background-color: {colors["bg_button_hover"]};
-    }}
-    #CloudPanel QPushButton:disabled {{
-        color: {colors["text_muted"]};
-        background-color: {colors["bg_card"]};
-        border-color: {colors["border_card"]};
-    }}
-    #CloudPanel #IconBtn {{
-        font-family: 'Segoe Fluent Icons', 'Segoe MDL2 Assets';
-        font-size: 10px;
-        font-weight: 400;
-        color: {colors["accent_icon"]};
-        background-color: transparent;
-        border: none;
-        padding: 0;
-        min-width: 28px;
-        max-width: 28px;
-        min-height: 28px;
-        max-height: 28px;
-    }}
-    #CloudPanel #IconBtn:hover {{
-        background-color: {colors["bg_button_hover"]};
-    }}
-    #CloudPanel #IconBtn:disabled {{
-        color: {colors["text_muted"]};
-        background-color: {colors["bg_card"]};
-        border-color: {colors["border_card"]};
-    }}
-    #CloudPanel #IconBtnRefresh {{
-        font-family: 'Segoe Fluent Icons', 'Segoe MDL2 Assets';
-        font-size: 13px;
-        font-weight: 400;
-        color: {colors["accent_icon"]};
-        background-color: transparent;
-        border: none;
-        padding: 0;
-        min-width: 28px;
-        max-width: 28px;
-        min-height: 28px;
-        max-height: 28px;
-    }}
-    #CloudPanel #IconBtnRefresh:hover {{
-        background-color: {colors["bg_button_hover"]};
-    }}
-    #CloudPanel #IconBtnRefresh:disabled {{
-        color: {colors["text_muted"]};
-        background-color: {colors["bg_card"]};
-        border-color: {colors["border_card"]};
-    }}
-    #CloudFolderRow {{
-        background-color: {colors["bg_button"]};
-        border: 1px solid {colors["border_button"]};
-        border-radius: 6px;
-        text-align: left;
-        padding: 0px;
-    }}
-    #CloudFolderRow:hover {{
-        background-color: {colors["bg_button_hover"]};
-        border-color: {colors["accent"]};
-    }}
-    #CloudFolderRow:disabled {{
-        background-color: {colors["bg_card"]};
-        border-color: {colors["border_card"]};
-    }}
-    #CloudFolderName {{
-        color: {colors["text_secondary"]};
-        font-family: 'Segoe UI';
-        font-size: 13px;
-        font-weight: 600;
-        background: transparent;
-    }}
-    #CloudFolderRow:hover #CloudFolderName {{
-        color: {colors["text_primary"]};
-    }}
-    #CloudFolderRow:disabled #CloudFolderName {{
-        color: {colors["text_muted"]};
-    }}
-    #CloudFolderPreview {{
-        color: {colors["text_primary"]};
-        font-size: 22px;
-        font-weight: 400;
-        background: transparent;
-    }}
-    #CloudFolderRow:disabled #CloudFolderPreview {{
-        color: {colors["text_muted"]};
-    }}
-    #CloudScroll {{
-        border: none;
-        background: transparent;
-    }}
-    #CloudScroll::viewport {{
-        background: transparent;
-    }}
     """
 
 class OperationThread(QThread):
@@ -768,6 +649,8 @@ class WeightCard(QFrame):
             title_str = "等宽 · " + weight.replace("consolas_", "").replace("_", " ").title()
         elif weight.startswith("yahei_"):
             title_str = {"yahei_regular": "中文 · 常规", "yahei_bold": "中文 · 粗体", "yahei_light": "中文 · 细体"}[weight]
+        elif weight == "jhenghei_regular":
+            title_str = "微软正黑体 · 常规"
         else:
             title_str = weight.replace("_", " ").title()
 
@@ -795,7 +678,7 @@ class WeightCard(QFrame):
         
         is_mono = weight.startswith("consolas_")
         sample_text = "The quick brown fox jumps over the lazy dog"
-        if weight.startswith("yahei_"):
+        if weight in CJK_WEIGHTS:
             sample_text = "文件资源管理器 · 最近使用：你好，世界！123"
         self.preview = QLabel(sample_text)
         self.preview.setObjectName("VariantPreview")
@@ -845,127 +728,8 @@ class WeightCard(QFrame):
             self._font_id = -1
 
 
-class _FetchFoldersThread(QThread):
-    finished_ok = Signal(list)
-    finished_err = Signal(str)
-
-    def __init__(self, repo, branch, parent=None):
-        super().__init__(parent)
-        self._repo = repo
-        self._branch = branch
-
-    def run(self):
-        try:
-            from github_fonts import list_remote_folders
-
-            folders = list_remote_folders(repo=self._repo, branch=self._branch)
-            self.finished_ok.emit(folders)
-        except Exception as exc:
-            self.finished_err.emit(str(exc))
-
-
-class _DownloadFolderThread(QThread):
-    progress = Signal(int, str)
-    finished_ok = Signal(list)
-    finished_err = Signal(str)
-
-    def __init__(self, folder, parent=None):
-        super().__init__(parent)
-        self._folder = folder
-
-    def run(self):
-        try:
-            from github_fonts import download_folder
-
-            local_paths = download_folder(self._folder, progress=self.progress.emit)
-            self.finished_ok.emit([str(p) for p in local_paths])
-        except Exception as exc:
-            self.finished_err.emit(str(exc))
-
-
-class _LoadPreviewsThread(QThread):
-    preview_ready = Signal(str, str)
-
-    def __init__(self, folders, parent=None):
-        super().__init__(parent)
-        self._folders = folders
-
-    def run(self):
-        try:
-            from github_fonts import pick_regular_remote, download_remote_font
-            for folder in self._folders:
-                if self.isInterruptionRequested():
-                    break
-                try:
-                    reg = pick_regular_remote(folder.fonts)
-                    path = download_remote_font(reg)
-                    if self.isInterruptionRequested():
-                        break
-                    self.preview_ready.emit(folder.name, str(path))
-                except Exception:
-                    pass
-        except Exception:
-            pass
-
-
-class CloudFolderRow(QPushButton):
-    """Button representing a font folder with folder name and live font preview."""
-
-    def __init__(self, folder, parent=None):
-        super().__init__(parent)
-        self.folder = folder
-        self._family_name = ""
-        self.setObjectName("CloudFolderRow")
-        self.setCursor(Qt.PointingHandCursor)
-        self.setFocusPolicy(Qt.TabFocus)
-        self.setFixedHeight(58)
-
-        lay = QHBoxLayout(self)
-        lay.setContentsMargins(16, 0, 16, 0)
-        lay.setSpacing(20)
-
-        self.name_label = QLabel(folder.name)
-        self.name_label.setObjectName("CloudFolderName")
-        self.name_label.setFixedWidth(175)
-        self.name_label.setAttribute(Qt.WA_TransparentForMouseEvents)
-        lay.addWidget(self.name_label)
-
-        self.preview_label = QLabel("The quick brown fox jumps over the lazy dog")
-        self.preview_label.setObjectName("CloudFolderPreview")
-        self.preview_label.setAttribute(Qt.WA_TransparentForMouseEvents)
-        self.preview_label.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
-        lay.addWidget(self.preview_label, 1)
-
-        self.refresh_theme()
-
-    def refresh_theme(self):
-        window = self.window()
-        is_dark = getattr(window, "is_dark", None)
-        if is_dark is None:
-            is_dark = is_system_dark_mode()
-        colors = get_theme_colors(is_dark, is_windows_11())
-        text_color = colors["text_primary"] if self.isEnabled() else colors["text_muted"]
-        self.name_label.setStyleSheet(
-            f"color: {text_color}; font-size: 13px; font-weight: 600; font-family: 'Segoe UI', sans-serif; background: transparent;"
-        )
-        fam = f"font-family: '{self._family_name}', sans-serif;" if self._family_name else "font-family: 'Segoe UI', sans-serif;"
-        self.preview_label.setStyleSheet(
-            f"color: {text_color}; {fam} font-size: 22px; background: transparent;"
-        )
-
-    def set_font_family(self, family_name: str):
-        if not family_name:
-            return
-        self._family_name = family_name
-        self.refresh_theme()
-
-    def setEnabled(self, enabled):
-        super().setEnabled(enabled)
-        self.refresh_theme()
-
-
 class LocalFontsGuide(QWidget):
-    """Informational guide displayed in the empty space when no font is selected and cloud panel is closed."""
+    """Informational guide displayed in the empty space when no font is selected."""
 
     POINTS = (
         "将同一家族的 .ttf 放在同一文件夹，选择常规字重后会自动匹配其他样式。",
@@ -1216,458 +980,6 @@ class IconActionButton(QFrame):
         super().mouseReleaseEvent(event)
 
 
-class CloudFolderPanel(QFrame):
-    """Inline (non-popup) dropdown listing the folders of the GitHub fonts repo."""
-
-    downloaded = Signal(list)
-    closed = Signal()
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setObjectName("CloudPanel")
-        self.hide()
-        self._folders = []
-        self._fetch_thread = None
-        self._dl_thread = None
-        self._preview_thread = None
-        self._preview_font_ids = []
-        self._row_map = {}
-        self._is_hiding = False
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(18, 16, 18, 16)
-        layout.setSpacing(12)
-
-        header = QHBoxLayout()
-        header.setSpacing(8)
-        title = QLabel("在线字体库")
-        title.setObjectName("CloudTitle")
-        header.addWidget(title)
-        header.addStretch(1)
-        refresh_btn = QPushButton(chr(0xE7AD))
-        refresh_btn.setObjectName("IconBtnRefresh")
-        refresh_btn.setCursor(Qt.PointingHandCursor)
-        refresh_btn.setToolTip("刷新字体列表")
-        refresh_btn.setAccessibleName("刷新字体列表")
-        refresh_btn.clicked.connect(lambda: self.start_fetch(force=True))
-        header.addWidget(refresh_btn)
-        close_btn = QPushButton(chr(0xE8BB))
-        close_btn.setObjectName("IconBtn")
-        close_btn.setCursor(Qt.PointingHandCursor)
-        close_btn.setToolTip("关闭")
-        close_btn.setAccessibleName("Close cloud panel")
-        close_btn.clicked.connect(self._on_close)
-        header.addWidget(close_btn)
-        layout.addLayout(header)
-
-        self.status_lbl = QLabel("正在加载字体列表…")
-        self.status_lbl.setObjectName("CloudMeta")
-        self.status_lbl.setWordWrap(True)
-        layout.addWidget(self.status_lbl)
-
-        self.scroll = QScrollArea()
-        self.scroll.setObjectName("CloudScroll")
-        # The scroll area itself otherwise paints an opaque palette.Window
-        # fill, which shows as window-colored stripes in the row gaps.
-        self.scroll.setAutoFillBackground(False)
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setFrameShape(QFrame.NoFrame)
-        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        # The viewport otherwise paints an opaque palette background, which
-        # turns the translucent row colors opaque (white rows in dark mode).
-        self.scroll.viewport().setAutoFillBackground(False)
-        self._scroll_geom_key = None
-        self._rows_container = QWidget()
-        self._rows_container.setAutoFillBackground(False)
-        self._rows_layout = QVBoxLayout(self._rows_container)
-        self._rows_layout.setContentsMargins(0, 0, 0, 0)
-        self._rows_layout.setSpacing(8)
-        self._rows_layout.addStretch(1)
-        self.scroll.setWidget(self._rows_container)
-        # setWidget() re-enables auto-fill on the widget: switch it back
-        # off or the palette.Window fill shows in the row gaps.
-        self._rows_container.setAutoFillBackground(False)
-        layout.addWidget(self.scroll)
-
-    def showEvent(self, event):
-        super().showEvent(event)
-        # The page layout may have shifted (e.g. preview cards appearing),
-        # so re-measure after this show settles.
-        QTimer.singleShot(0, self.sync_height)
-
-    def sync_height(self, window_height=None):
-        try:
-            lay = self._rows_container.layout()
-            heights = []
-            spacing = 0
-            margins = 0
-            if lay is not None:
-                spacing = int(lay.spacing())
-                try:
-                    cm = lay.contentsMargins()
-                    margins = int(cm.top()) + int(cm.bottom())
-                except RuntimeError:
-                    margins = 0
-                for i in range(lay.count()):
-                    item = lay.itemAt(i)
-                    if item is None:
-                        continue
-                    widget = item.widget()
-                    if widget is None:
-                        continue
-                    try:
-                        # Polish first: an unpolished row reports its unstyled
-                        # sizeHint (~25px) instead of the real QSS height (~48px),
-                        # which used to pin the viewport far too small.
-                        widget.ensurePolished()
-                        heights.append(max(0, int(widget.sizeHint().height())))
-                    except RuntimeError:
-                        continue
-            content = sum(heights)
-            if len(heights) > 1:
-                content += spacing * (len(heights) - 1)
-            # The layout margins are real pixels the container needs; leaving
-            # them out pinned the viewport 1px short and produced a scrollbar
-            # with a ~1px range that moved nothing.
-            content += margins
-            if heights:
-                content += 6
-            # Show up to 5 rows; anything beyond that scrolls inside the list.
-            shown = heights[:5]
-            target = sum(shown)
-            if len(shown) > 1:
-                target += spacing * (len(shown) - 1)
-            if shown:
-                target += margins + 6
-        except RuntimeError:
-            content = 0
-            target = 0
-        if window_height is None:
-            try:
-                win = self.window()
-                window_height = win.height() if win is not None else 650
-            except RuntimeError:
-                window_height = 650
-        try:
-            cap = max(60, min(560, int(round(float(window_height) * 0.45))))
-        except (TypeError, ValueError):
-            cap = 360
-        # Never let the panel overflow the window: measure what the visible
-        # siblings (banner, setup card, variant cards…) already occupy and
-        # cap the list to what is actually left.
-        try:
-            win_h = int(round(float(window_height)))
-            parent = self.parentWidget()
-            play = parent.layout() if parent is not None else None
-            if play is not None and win_h > 0:
-                used = 0
-                sibs = 0
-                for j in range(play.count()):
-                    sub = play.itemAt(j)
-                    sib = sub.widget() if sub is not None else None
-                    if sib is None or sib is self or not sib.isVisibleTo(parent):
-                        continue
-                    used += max(0, int(sib.height()))
-                    sibs += 1
-                try:
-                    pm = play.contentsMargins()
-                    used += int(pm.top()) + int(pm.bottom())
-                except RuntimeError:
-                    pass
-                try:
-                    used += int(play.spacing()) * max(0, sibs)
-                except RuntimeError:
-                    pass
-                if used > 0:
-                    avail = win_h - used - 16
-                    panel_chrome = 0
-                    lay_self = self.layout()
-                    if lay_self is not None:
-                        cm_self = lay_self.contentsMargins()
-                        panel_chrome += int(cm_self.top()) + int(cm_self.bottom())
-                        spacing_self = int(lay_self.spacing())
-                        for k in range(lay_self.count()):
-                            item_self = lay_self.itemAt(k)
-                            w_self = item_self.widget() if item_self is not None else None
-                            if w_self is not None and w_self is not self.scroll:
-                                if w_self.isVisible() and (not isinstance(w_self, QLabel) or w_self.text()):
-                                    panel_chrome += max(0, int(w_self.sizeHint().height())) + spacing_self
-                            elif item_self is not None and item_self.layout() is not None:
-                                panel_chrome += max(0, int(item_self.layout().sizeHint().height())) + spacing_self
-                    avail_for_scroll = max(60, avail - panel_chrome)
-                    cap = min(cap, avail_for_scroll)
-        except (RuntimeError, TypeError, ValueError):
-            pass
-        content = max(0, int(content))
-        target = max(0, int(target))
-        # Pin the container to at least the measured row stack. If the
-        # layout ever goes stale-short, rows overflow the container and the
-        # scrollbar maximum strands users above the last row (first-row
-        # sliver on top, cut last row at max scroll). A minimum height equal
-        # to the real content makes scroll-end exact by construction; when
-        # healthy it equals the layout height, i.e. a no-op.
-        try:
-            self._rows_container.setMinimumHeight(content)
-        except RuntimeError:
-            pass
-        if getattr(self, "_scroll_geom_key", None) == (cap, content):
-            return
-        self._scroll_geom_key = (cap, content)
-        height = min(target, cap)
-        try:
-            self.scroll.setMinimumHeight(height)
-            self.scroll.setMaximumHeight(height)
-            # One full row pitch per wheel notch; the default step stops
-            # mid-row and feels stuck.
-            self.scroll.verticalScrollBar().setSingleStep(66)
-            self.scroll.updateGeometry()
-        except RuntimeError:
-            pass
-        try:
-            win = self.window()
-            if win is not None and win.layout() is not None:
-                win.layout().activate()
-        except RuntimeError:
-            pass
-
-    def start_fetch(self, force=False):
-        if self._fetch_thread and self._fetch_thread.isRunning():
-            return
-        if not force and self._folders and self._rows_layout.count() > 1:
-            self.sync_height()
-            return
-        if not self._folders or self._rows_layout.count() <= 1:
-            self._clear_rows()
-            self._set_status("Loading fonts…")
-        else:
-            self._set_status("Refreshing fonts…")
-        self._fetch_thread = _FetchFoldersThread(GITHUB_FONTS_REPO, GITHUB_FONTS_BRANCH, self)
-        self._fetch_thread.finished_ok.connect(self._on_fetch_ok)
-        self._fetch_thread.finished_err.connect(self._on_fetch_err)
-        self._fetch_thread.finished.connect(self._fetch_thread.deleteLater)
-        self._fetch_thread.start()
-
-    def _on_fetch_ok(self, folders):
-        self._fetch_thread = None
-        self._folders = folders
-        self._clear_rows()
-        if not folders:
-            self._set_status("Fonts couldn't be loaded.")
-            return
-        self._row_map = {}
-        for folder in folders:
-            row = CloudFolderRow(folder)
-            row.clicked.connect(lambda _checked=False, f=folder: self._on_folder_clicked(f))
-            self._rows_layout.insertWidget(self._rows_layout.count() - 1, row)
-            self._row_map[folder.name] = row
-        self._set_status("")
-        self.sync_height()
-        # Re-measure once the event loop has polished and laid out the new
-        # rows (folder list arriving while preview cards shift the page).
-        QTimer.singleShot(0, self.sync_height)
-        self._start_preview_loading(folders)
-
-    def _start_preview_loading(self, folders):
-        uncached_folders = []
-        try:
-            from github_fonts import get_cache_dir, _safe_folder_name, pick_regular_remote
-            cache_root = get_cache_dir()
-            for folder in folders:
-                try:
-                    reg = pick_regular_remote(folder.fonts)
-                    target = cache_root / _safe_folder_name(folder.folder) / reg.name
-                    if target.exists() and reg.size and target.stat().st_size == reg.size:
-                        self._apply_preview_font(folder.name, str(target))
-                    else:
-                        uncached_folders.append(folder)
-                except Exception:
-                    uncached_folders.append(folder)
-        except Exception:
-            uncached_folders = list(folders)
-
-        if uncached_folders:
-            if self._preview_thread and self._preview_thread.isRunning():
-                try:
-                    self._preview_thread.requestInterruption()
-                    self._preview_thread.quit()
-                    self._preview_thread.wait(300)
-                except Exception:
-                    pass
-            self._preview_thread = _LoadPreviewsThread(uncached_folders, self)
-            self._preview_thread.preview_ready.connect(self._apply_preview_font)
-            self._preview_thread.finished.connect(self._preview_thread.deleteLater)
-            self._preview_thread.start()
-
-    def _apply_preview_font(self, folder_name: str, path_str: str):
-        row = self._row_map.get(folder_name)
-        if not row:
-            return
-        try:
-            font_id = QFontDatabase.addApplicationFont(path_str)
-            if font_id >= 0:
-                self._preview_font_ids.append(font_id)
-                families = QFontDatabase.applicationFontFamilies(font_id)
-                if families:
-                    row.set_font_family(families[0])
-        except Exception:
-            pass
-
-    def _set_status(self, text):
-        # An empty status takes no space, keeping the first entry tight
-        # under the header instead of leaving a dead gap.
-        self.status_lbl.setText(text or "")
-        self.status_lbl.setVisible(bool(text))
-
-    def _on_fetch_err(self, message):
-        self._fetch_thread = None
-        text = str(message or "")
-        if "403" in text or "rate limit" in text.lower():
-            self._set_status("Fonts couldn't be loaded. Please try again in an hour.")
-        else:
-            self._set_status("Fonts couldn't be loaded. Check your internet connection.")
-
-    def _row_text(self, folder):
-        return folder.name.replace("&", "&&")
-
-    def _clear_rows(self):
-        self._row_map.clear()
-        while self._rows_layout.count() > 1:
-            item = self._rows_layout.takeAt(0)
-            widget = item.widget()
-            if widget is not None:
-                widget.deleteLater()
-        self.sync_height()
-
-    def _set_rows_enabled(self, enabled):
-        for i in range(self._rows_layout.count() - 1):
-            widget = self._rows_layout.itemAt(i).widget()
-            if widget is not None:
-                widget.setEnabled(enabled)
-
-    def _on_folder_clicked(self, folder):
-        if self._dl_thread and self._dl_thread.isRunning():
-            return
-        self._set_rows_enabled(False)
-        self._set_status("Downloading…")
-        self._dl_thread = _DownloadFolderThread(folder, self)
-        self._dl_thread.progress.connect(self._on_dl_progress)
-        self._dl_thread.finished_ok.connect(self._on_dl_ok)
-        self._dl_thread.finished_err.connect(self._on_dl_err)
-        self._dl_thread.finished.connect(self._dl_thread.deleteLater)
-        self._dl_thread.start()
-
-    def _on_dl_progress(self, pct, name):
-        self._set_status(f"Downloading… {int(pct)}%")
-
-    def _on_dl_ok(self, local_paths):
-        self._dl_thread = None
-        self._set_rows_enabled(True)
-        self._set_status("")
-        self.downloaded.emit(local_paths)
-        QTimer.singleShot(0, self.sync_height)
-
-    def _on_dl_err(self, message):
-        self._dl_thread = None
-        self._set_rows_enabled(True)
-        # Never surface file names, counts, or errnos: tell the user what
-        # to do instead. Throttling backs off on its own; anything else is
-        # almost always the connection.
-        lowered = (message or "").lower()
-        if "403" in lowered or "429" in lowered or "rate limit" in lowered:
-            self._set_status("Too many downloads right now. Try again in an hour.")
-        else:
-            self._set_status("Download failed. Check your internet and try again.")
-
-    def refresh_theme(self):
-        for i in range(self._rows_layout.count() - 1):
-            widget = self._rows_layout.itemAt(i).widget()
-            if isinstance(widget, CloudFolderRow):
-                widget.refresh_theme()
-
-    def _on_close(self):
-        self.animate_hide()
-
-    def reset(self):
-        if self._dl_thread and self._dl_thread.isRunning():
-            return False
-        self._kill_anim()
-        self._is_hiding = False
-        self.setMaximumHeight(16777215)
-        self.setEnabled(True)
-        self._set_status("")
-        self.hide()
-        return True
-
-    def _kill_anim(self):
-        anim = getattr(self, "_height_anim", None)
-        if anim is not None:
-            try:
-                anim.stop()
-            except RuntimeError:
-                pass
-            self._height_anim = None
-
-    def animate_show(self, window_height=None):
-        """Expand the panel smoothly with a slide-down animation."""
-        if self._dl_thread and self._dl_thread.isRunning():
-            return False
-        self._kill_anim()
-        self._is_hiding = False
-        self.setEnabled(True)
-        self._set_status("")
-        self.sync_height(window_height)
-        target = max(60, self.sizeHint().height())
-        self.setMaximumHeight(0)
-        self.show()
-        self.raise_()
-        anim = QPropertyAnimation(self, b"maximumHeight", self)
-        anim.setStartValue(0)
-        anim.setEndValue(target)
-        anim.setDuration(200)
-        anim.setEasingCurve(QEasingCurve.OutCubic)
-
-        def _on_show_done():
-            self._height_anim = None
-            self.setMaximumHeight(16777215)
-            self.sync_height()
-
-        anim.finished.connect(_on_show_done)
-        self._height_anim = anim
-        anim.start()
-        return True
-
-    def animate_hide(self):
-        """Collapse the panel with a short animation. Refuses (False) while
-        a download is running, so the list can't be yanked away mid-fetch."""
-        if self._dl_thread and self._dl_thread.isRunning():
-            return False
-        if not self.isVisible():
-            return True
-        self._kill_anim()
-        self._is_hiding = True
-        self.setEnabled(False)
-        start = max(1, self.height())
-        self.setMaximumHeight(start)
-        anim = QPropertyAnimation(self, b"maximumHeight", self)
-        anim.setStartValue(start)
-        anim.setEndValue(0)
-        anim.setDuration(180)
-        anim.setEasingCurve(QEasingCurve.InCubic)
-        anim.finished.connect(self._on_hide_anim_done)
-        self._height_anim = anim
-        anim.start()
-        return True
-
-    def _on_hide_anim_done(self):
-        self._is_hiding = False
-        self._height_anim = None
-        self.setMaximumHeight(16777215)
-        self.setEnabled(True)
-        self._set_status("")
-        self.hide()
-        self.closed.emit()
-
-
 def _star_outline_3d():
     points = []
     for i in range(10):
@@ -1872,7 +1184,6 @@ class FontWizardApp(QMainWindow):
         self._op_cover_btn = None
         self._armed_at = 0.0
         self._star_active = False
-        self._cloud_open = False
         self._cards_sig = None
         self._last_theme_sig = None
         self._variant_geom_key = None
@@ -1892,12 +1203,9 @@ class FontWizardApp(QMainWindow):
         self._build_chinese_option()
         self._build_variants()
         self.main_layout.addStretch(1)
-        self._action_buttons = (self.local_btn, self.fetch_btn, self.apply_btn, self.restore_btn)
+        self._action_buttons = (self.local_btn, self.apply_btn, self.restore_btn)
 
         self.local_btn.clicked.connect(self._on_local_pick)
-        self.fetch_btn.clicked.connect(self._on_cloud_toggle)
-        self.cloud_panel.downloaded.connect(self._on_cloud_downloaded)
-        self.cloud_panel.closed.connect(self._on_cloud_closed)
         self.apply_btn.clicked.connect(self.on_apply_action)
         self.restore_btn.clicked.connect(self.on_restore)
 
@@ -2006,16 +1314,14 @@ class FontWizardApp(QMainWindow):
         self.actions_layout.setSpacing(10)
 
         self.local_btn = IconActionButton(chr(0xE8E5), 18, "ActionIconLocal", "本地字体")
-        self.fetch_btn = IconActionButton(chr(0xE753), 24, "ActionIconFetch", "在线字体")
         self.apply_btn = QPushButton("应用字体")
         self.restore_btn = QPushButton("恢复原始字体")
 
         self.local_btn.setToolTip("选择本地字体")
-        self.fetch_btn.setToolTip("从在线字体库下载")
         for button in (self.apply_btn, self.restore_btn):
             button.setFixedHeight(34)
             button.setMinimumWidth(150)
-        for button in (self.local_btn, self.fetch_btn, self.apply_btn, self.restore_btn):
+        for button in (self.local_btn, self.apply_btn, self.restore_btn):
             button.setCursor(Qt.PointingHandCursor)
             button.setFocusPolicy(Qt.NoFocus)
             button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -2025,8 +1331,6 @@ class FontWizardApp(QMainWindow):
         self.setup_layout.addWidget(self.actions_widget, 0, Qt.AlignVCenter)
         self.main_layout.addWidget(self.setup_card)
 
-        self.cloud_panel = CloudFolderPanel()
-        self.main_layout.addWidget(self.cloud_panel)
 
     def _build_variants(self):
         self.variants_header = QWidget()
@@ -2059,7 +1363,7 @@ class FontWizardApp(QMainWindow):
         self.main_layout.addWidget(self.empty_variants, 1000)
 
         self.weight_scroll = QScrollArea(objectName="WeightScrollArea")
-        # Same opaque-fill hazard as the cloud list: keep it transparent.
+        # Keep the viewport transparent.
         self.weight_scroll.setAutoFillBackground(False)
         self.weight_scroll.setWidgetResizable(True)
         self.weight_scroll.setFrameShape(QFrame.NoFrame)
@@ -2074,7 +1378,7 @@ class FontWizardApp(QMainWindow):
         self.weight_layout.setContentsMargins(0, 0, 0, 0)
 
         self.weight_scroll.setWidget(self.weight_widget)
-        # setWidget() re-enables auto-fill on the widget (see cloud list).
+        # setWidget() re-enables auto-fill on the widget.
         self.weight_widget.setAutoFillBackground(False)
         self.weight_scroll.viewport().installEventFilter(self)
         self.main_layout.addWidget(self.weight_scroll, 1000)
@@ -2083,23 +1387,32 @@ class FontWizardApp(QMainWindow):
         self.main_layout.addWidget(self.local_fonts_guide, 1000)
 
     def _build_chinese_option(self):
-        row = QWidget()
+        row = QFrame(objectName="FontOptions")
         layout = QVBoxLayout(row)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
-        self.chinese_option = QCheckBox("替换系统中文字体（微软雅黑）")
+        layout.setContentsMargins(16, 12, 16, 12)
+        layout.setSpacing(8)
+        self.chinese_option = QCheckBox("替换微软雅黑")
         self.chinese_option.setChecked(self.controller.workflow.include_chinese)
         self.chinese_option.setToolTip(
             "替换系统微软雅黑和微软雅黑 UI 的常规、粗体、细体，需重启 Windows。\n"
-            "使用系统微软雅黑的界面会受到影响。微信输入框若使用内置 WeChat Sans，将保留其字形。\n"
+            "使用系统微软雅黑的界面会受到影响。\n"
             "取消勾选仅停止后续替换，已应用的中文字体需通过 「恢复原始字体」恢复。"
         )
-        note = QLabel("请选择含中文的静态 TTF，重启后生效。微信自带的字体资源由微信管理。")
+        note = QLabel("需要包含中文的静态 TTF，重启后生效。")
         note.setObjectName("CardDesc")
         note.setWordWrap(True)
+        note.setContentsMargins(26, 0, 0, 0)
         layout.addWidget(self.chinese_option)
         layout.addWidget(note)
-        self.explorer_option = QCheckBox("资源管理器字体（文件列表 / 侧栏 / 桌面）")
+        self.jhenghei_option = QCheckBox("替换微软正黑体（微信输入框试验）")
+        self.jhenghei_option.setChecked(self.controller.workflow.include_jhenghei)
+        self.jhenghei_option.setToolTip(
+            "替换微软正黑体及微软正黑体 UI 的常规字重，重启后生效。\n"
+            "也会影响使用该系统字体的其他应用。微信中的效果取决于版本和实际字体选择。\n"
+            "恢复请使用「恢复原始字体」。"
+        )
+        layout.addWidget(self.jhenghei_option)
+        self.explorer_option = QCheckBox("同时应用到资源管理器和桌面")
         self.explorer_option.setChecked(self.controller.workflow.include_explorer)
         self.explorer_option.setToolTip(
             "让文件列表、桌面图标及系统菜单字体跟随所选界面字体，保留字号与字重。\n"
@@ -2108,21 +1421,27 @@ class FontWizardApp(QMainWindow):
         )
         layout.addWidget(self.explorer_option)
         size_row = QHBoxLayout()
-        size_label = QLabel("替换字体大小")
-        self.font_scale = QSpinBox()
+        size_label = QLabel("替换字号")
+        size_label.setObjectName("CardDesc")
+        self.font_scale = QSlider(Qt.Horizontal)
         self.font_scale.setRange(MIN_FONT_SCALE, MAX_FONT_SCALE)
-        self.font_scale.setSuffix("%")
         self.font_scale.setValue(self.controller.workflow.font_scale)
-        self.font_scale.setToolTip("调整替换字体的相对大小。下方样例实时更新，实际效果因应用布局而异。")
-        size_label.setBuddy(self.font_scale)
+        self.font_scale.setAccessibleName("替换字号百分比")
+        self.font_scale.setMaximumWidth(180)
+        self.font_scale.setToolTip("拖动或使用方向键调整。下方样例实时更新。")
+        self.font_scale_value = QLabel(f"{self.font_scale.value()}%", objectName="ScaleValue")
+        self.font_scale_value.setMinimumWidth(54)
+        self.font_scale_value.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         size_row.addWidget(size_label)
         size_row.addWidget(self.font_scale)
+        size_row.addWidget(self.font_scale_value)
         size_row.addStretch()
         layout.addLayout(size_row)
         self.font_scale.valueChanged.connect(self._on_font_scale)
         self.explorer_option.toggled.connect(self._on_explorer_option)
         self.main_layout.addWidget(row)
         self.chinese_option.toggled.connect(self._on_chinese_option)
+        self.jhenghei_option.toggled.connect(self._on_jhenghei_option)
 
     def _on_chinese_option(self, enabled):
         try:
@@ -2142,8 +1461,22 @@ class FontWizardApp(QMainWindow):
         self._selection_dirty = True
         self.refresh_all()
 
+    def _on_jhenghei_option(self, enabled):
+        try:
+            self.controller.set_include_jhenghei(enabled)
+        except Exception as exc:
+            self.jhenghei_option.blockSignals(True)
+            self.jhenghei_option.setChecked(not enabled)
+            self.jhenghei_option.blockSignals(False)
+            self.controller.workflow.include_jhenghei = not enabled
+            QMessageBox.warning(self, "微软正黑体", str(exc))
+            return
+        self._selection_dirty = True
+        self.refresh_all()
+
     def _on_font_scale(self, percent):
         self.controller.workflow.font_scale = percent
+        self.font_scale_value.setText(f"{percent}%")
         self._selection_dirty = True
         self._disarm()
         for index in range(self.weight_layout.count()):
@@ -2168,8 +1501,6 @@ class FontWizardApp(QMainWindow):
             refresh = getattr(button, "refresh_action_style", None)
             if refresh:
                 refresh()
-        if hasattr(self, "cloud_panel"):
-            self.cloud_panel.refresh_theme()
         if hasattr(self, "local_fonts_guide"):
             self.local_fonts_guide.refresh_theme(self.is_dark)
 
@@ -2460,12 +1791,6 @@ class FontWizardApp(QMainWindow):
         super().resizeEvent(event)
         self._sync_responsive_layout()
         self._sync_variant_layout_height()
-        panel = getattr(self, "cloud_panel", None)
-        if panel is not None:
-            try:
-                panel.sync_height(self.height())
-            except RuntimeError:
-                pass
         if self._armed_button is not None:
             self._layout_arm_halves()
         cover = getattr(self, "_op_cover", None)
@@ -2712,10 +2037,6 @@ class FontWizardApp(QMainWindow):
         )
         if not font_path:
             return
-        # A local pick replaces the cloud list — hide it (unless a cloud
-        # download is actively running, in which case animate_hide() refuses).
-        self._set_cloud_closed()
-        self.cloud_panel.animate_hide()
         self._select_regular(font_path)
 
     def _select_regular(self, font_path):
@@ -2728,40 +2049,6 @@ class FontWizardApp(QMainWindow):
         self._hide_applied_variants = False
         self.refresh_all()
         return True
-
-    def _on_cloud_toggle(self):
-        # The fetch button only ever shows the panel; hiding is the close
-        # button's job, so a second click must not toggle it away.
-        if self.cloud_panel.isVisible() and not getattr(self.cloud_panel, "_is_hiding", False):
-            return
-        # Preview cards step aside while the cloud list is open; the
-        # panel's height cap reads sibling sizes, so it grows into the
-        # freed space on its own.
-        self._cloud_open = True
-        self.refresh_all()
-        self.cloud_panel.sync_height(self.height())
-        self.cloud_panel.animate_show(self.height())
-        self.cloud_panel.start_fetch(force=False)
-
-    def _set_cloud_closed(self):
-        self._cloud_open = False
-        self.refresh_all()
-
-    def _on_cloud_closed(self):
-        self._set_cloud_closed()
-
-    def _on_cloud_downloaded(self, local_paths):
-        if not local_paths:
-            return
-        try:
-            from github_fonts import pick_regular
-
-            primary = pick_regular([Path(p) for p in local_paths])
-        except Exception:
-            primary = Path(local_paths[0])
-        self._set_cloud_closed()
-        if self._select_regular(str(primary)):
-            self.cloud_panel.animate_hide()
 
     def on_apply_action(self):
         if self._apply_action == "restart":
@@ -2777,6 +2064,7 @@ class FontWizardApp(QMainWindow):
         for button in self._action_buttons:
             button.setEnabled(False)
         self.chinese_option.setEnabled(False)
+        self.jhenghei_option.setEnabled(False)
         self.explorer_option.setEnabled(False)
         self.font_scale.setEnabled(False)
         colors = get_theme_colors(self.is_dark)
@@ -2874,6 +2162,7 @@ class FontWizardApp(QMainWindow):
         is_apply_pending = report.install_state == "pending_reboot_apply"
         is_recovery_pending = report.install_state == "pending_reboot_recovery"
         self.chinese_option.setEnabled(not is_pending)
+        self.jhenghei_option.setEnabled(not is_pending)
         self.explorer_option.setEnabled(not is_pending)
         self.font_scale.setEnabled(not is_pending)
 
@@ -2916,8 +2205,6 @@ class FontWizardApp(QMainWindow):
 
         self.local_btn.setEnabled(not is_recovery_pending)
         self.local_btn.setVisible(not is_recovery_pending)
-        self.fetch_btn.setEnabled(not is_recovery_pending)
-        self.fetch_btn.setVisible(not is_recovery_pending)
 
         self.apply_btn.setText(apply_text)
         self.apply_btn.setEnabled(apply_available)
@@ -2942,12 +2229,10 @@ class FontWizardApp(QMainWindow):
         else:
             self.restore_btn.setToolTip("")
 
-        fetch_role = "secondary" if (has_selected_font or is_pending) else "primary"
         apply_role = "primary"
         restore_role = "secondary"
 
-        self._set_button_role(self.local_btn, "secondary")
-        self._set_button_role(self.fetch_btn, fetch_role)
+        self._set_button_role(self.local_btn, "secondary" if has_selected_font else "primary")
         self._set_button_role(self.apply_btn, apply_role)
         self._set_button_role(self.restore_btn, restore_role)
 
@@ -3019,11 +2304,7 @@ class FontWizardApp(QMainWindow):
         else:
             cards_added = self.weight_layout.count()
 
-        show_variant_section = (
-            has_selected_font
-            and not is_recovery_pending
-            and not getattr(self, "_cloud_open", False)
-        )
+        show_variant_section = has_selected_font and not is_recovery_pending
         has_variants = show_variant_section and cards_added > 0
         self.variant_count_lbl.setText(f"{cards_added} 种样式" if has_variants else "暂无预览")
 
@@ -3031,11 +2312,7 @@ class FontWizardApp(QMainWindow):
         self.empty_variants.setVisible(show_variant_section and not has_variants)
         self.weight_scroll.setVisible(has_variants)
         if hasattr(self, "local_fonts_guide"):
-            show_guide = (
-                not has_selected_font
-                and not is_recovery_pending
-                and not getattr(self, "_cloud_open", False)
-            )
+            show_guide = not has_selected_font and not is_recovery_pending
             self.local_fonts_guide.setVisible(show_guide)
         if has_variants:
             self.weight_widget.show()
@@ -3052,31 +2329,6 @@ class FontWizardApp(QMainWindow):
             return
         try:
             self._stop_star_anim()
-        except Exception:
-            pass
-        try:
-            panel = getattr(self, "cloud_panel", None)
-            if panel is not None:
-                panel._kill_anim()
-                preview_thread = getattr(panel, "_preview_thread", None)
-                if preview_thread is not None and preview_thread.isRunning():
-                    try:
-                        preview_thread.requestInterruption()
-                        preview_thread.wait(200)
-                    except Exception:
-                        pass
-                fetch_thread = getattr(panel, "_fetch_thread", None)
-                if fetch_thread is not None and fetch_thread.isRunning():
-                    try:
-                        fetch_thread.wait(200)
-                    except Exception:
-                        pass
-                dl_thread = getattr(panel, "_dl_thread", None)
-                if dl_thread is not None and dl_thread.isRunning():
-                    try:
-                        dl_thread.wait(200)
-                    except Exception:
-                        pass
         except Exception:
             pass
         event.accept()

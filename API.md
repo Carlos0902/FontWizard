@@ -30,7 +30,6 @@
 | `App/src/explorer_fonts.py` | 当前用户 Shell 字体设置，`WindowsShellFonts`、`ExplorerFontService`；备份、应用、恢复及失败回滚 |
 | `App/src/font_detection.py` | 字体检查与字重识别 |
 | `App/src/win_registry.py` | Windows 字体注册表访问，`WindowsFontRegistry` |
-| `App/src/github_fonts.py` | GitHub 字体目录查询、下载及缓存 |
 | `App/src/checks.py` | 管理员权限与预检 |
 | `App/src/app_state.py` | 托管状态持久化 |
 | `App/src/paths.py` | 运行时路径 |

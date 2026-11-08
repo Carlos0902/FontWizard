@@ -31,6 +31,7 @@ def _is_windows_11() -> bool:
 
 
 EXPECTED_FAMILIES = {
+    "msjh.ttc": ("microsoft jheng hei", "Microsoft Corporation", 20000),
     "msyh.ttc": ("microsoft ya hei", "Microsoft Corporation", 20000),
     "msyhbd.ttc": ("microsoft ya hei", "Microsoft Corporation", 20000),
     "msyhl.ttc": ("microsoft ya hei", "Microsoft Corporation", 20000),

@@ -17,11 +17,11 @@ from font_generation import build_font
 from font_detection import detect_weight_overrides, infer_family_label_from_strings
 from fonts import FontPlanEntry, ValidationSummary, validate_selection
 from operation import FontWorkflow, build_artifacts
-from settings import CHINESE_WEIGHTS, get_system_weights
+from settings import CHINESE_WEIGHTS, CJK_WEIGHTS, JHENGHEI_WEIGHTS, get_system_weights
 
 
-def make_font(path, family, weight=400, chinese=True):
-    chars = set("ABC " + (COMMON_UI_TEXT if chinese else ""))
+def make_font(path, family, weight=400, chinese=True, extra=""):
+    chars = set("ABC " + (COMMON_UI_TEXT if chinese else "") + extra)
     cmap = {ord(char): f"uni{ord(char):04X}" for char in chars}
     names = [".notdef", *cmap.values()]
     builder = FontBuilder(1000, isTTF=True)
@@ -73,6 +73,23 @@ class ChineseFontTests(unittest.TestCase):
                 self.assertEqual(built["OS/2"].usWeightClass, 700)
                 self.assertEqual(built.getBestCmap(), source.getBestCmap())
                 self.assertEqual(built["glyf"].compile(built), source["glyf"].compile(source))
+
+    def test_jhenghei_build_preserves_missing_glyphs_per_face(self):
+        donor_path = self.root / "msjh.ttc"
+        output = self.root / "output.ttc"
+        collection = TTCollection()
+        for family, extra in (("Microsoft JhengHei", "Ω"), ("Microsoft JhengHei UI", "Ж")):
+            path = self.root / f"{family}.ttf"
+            make_font(path, family, extra=extra)
+            collection.fonts.append(TTFont(path))
+        collection.save(donor_path)
+        collection.close()
+
+        build_chinese_collection(self.source, donor_path, output, preserve_coverage=True)
+        with TTCollection(donor_path) as donor, TTCollection(output) as result:
+            for original, built in zip(donor.fonts, result.fonts):
+                self.assertEqual(original["name"].getBestFamilyName(), built["name"].getBestFamilyName())
+                self.assertEqual(set(original.getBestCmap()), set(built.getBestCmap()))
 
     def test_latin_only_source_is_rejected_before_output(self):
         latin = self.root / "latin.ttf"
@@ -138,7 +155,7 @@ class ChineseFontTests(unittest.TestCase):
 
     def test_recovery_includes_chinese_after_option_disabled(self):
         workflow = self.workflow()
-        for name in CHINESE_WEIGHTS.values():
+        for name in CJK_WEIGHTS.values():
             (workflow.paths.backup_root / name).write_bytes(b"backup")
         with patch("operation.cleanup_orphaned_pending_ops", return_value=([], 0)), \
                 patch("operation.schedule_canonical_restore", return_value=(3, [])) as restore, \
@@ -146,7 +163,7 @@ class ChineseFontTests(unittest.TestCase):
                 patch("operation.refresh_windows_font_cache"):
             result = workflow.restore()
         self.assertTrue(result.success)
-        self.assertTrue(set(CHINESE_WEIGHTS.values()).issubset(restore.call_args.args[1]))
+        self.assertTrue(set(CJK_WEIGHTS.values()).issubset(restore.call_args.args[1]))
 
     def test_reapply_without_chinese_keeps_existing_manifest(self):
         workflow = self.workflow()
@@ -176,8 +193,11 @@ class ChineseFontTests(unittest.TestCase):
         cleanup.assert_not_called()
 
     def test_chinese_mode_is_opt_in(self):
-        self.assertFalse(set(CHINESE_WEIGHTS) & set(get_system_weights(self.root)))
+        self.assertFalse(set(CJK_WEIGHTS) & set(get_system_weights(self.root)))
         self.assertTrue(set(CHINESE_WEIGHTS).issubset(get_system_weights(self.root, include_chinese=True)))
+        weights = get_system_weights(self.root, include_jhenghei=True)
+        self.assertTrue(JHENGHEI_WEIGHTS.keys() <= weights.keys())
+        self.assertFalse(CHINESE_WEIGHTS.keys() & weights.keys())
 
     def test_collection_backup_family_matches_normalized_profile(self):
         from winsxs import expected_entry, profile

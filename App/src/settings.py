@@ -7,13 +7,6 @@ APP_NAME = "Fontscape"
 APP_GITHUB_URL = "https://github.com/Carlos0902/FontWizard"
 SCHEMA_VERSION = 1
 
-# Optional GitHub repo to fetch curated .ttf fonts from.
-# Default points at the user's own collection: https://github.com/karnyadavdev/Fonts
-# Override with env vars FONTWIZARD_FONTS_REPO / FONTWIZARD_FONTS_BRANCH if needed.
-GITHUB_FONTS_REPO = os.environ.get("FONTWIZARD_FONTS_REPO", "karnyadavdev/Fonts")
-GITHUB_FONTS_BRANCH = os.environ.get("FONTWIZARD_FONTS_BRANCH", "main")
-GITHUB_FONTS_URL = f"https://github.com/{GITHUB_FONTS_REPO}"
-
 SUPPORTED_WINDOWS_MAJOR = 10
 WINDOWS_10_MIN_BUILD = 10240
 WINDOWS_11_BUILD = 22000
@@ -70,9 +63,11 @@ CHINESE_WEIGHTS = {
     "yahei_bold": "msyhbd.ttc",
     "yahei_light": "msyhl.ttc",
 }
+JHENGHEI_WEIGHTS = {"jhenghei_regular": "msjh.ttc"}
+CJK_WEIGHTS = {**CHINESE_WEIGHTS, **JHENGHEI_WEIGHTS}
 
 
-def get_system_weights(fonts_dir=None, include_chinese=False):
+def get_system_weights(fonts_dir=None, include_chinese=False, include_jhenghei=False):
     target_dir = Path(fonts_dir or FONTS_DIR)
     weights = dict(STATIC_WEIGHTS)
     if (target_dir / "SegUIVar.ttf").exists():
@@ -82,11 +77,14 @@ def get_system_weights(fonts_dir=None, include_chinese=False):
             weights[k] = v
     if include_chinese:
         weights.update(CHINESE_WEIGHTS)
+    if include_jhenghei:
+        weights.update(JHENGHEI_WEIGHTS)
     return weights
 
 WEIGHTS = get_system_weights()
 
 REGISTRY_NAMES = {
+    "jhenghei_regular": "Microsoft JhengHei & Microsoft JhengHei UI (TrueType)",
     "yahei_regular": "Microsoft YaHei & Microsoft YaHei UI (TrueType)",
     "yahei_bold": "Microsoft YaHei Bold & Microsoft YaHei UI Bold (TrueType)",
     "yahei_light": "Microsoft YaHei Light & Microsoft YaHei UI Light (TrueType)",
@@ -110,6 +108,7 @@ REGISTRY_NAMES = {
 }
 
 WEIGHT_TARGETS = {
+    "jhenghei_regular": (400, False),
     "yahei_regular": (400, False),
     "yahei_bold": (700, False),
     "yahei_light": (300, False),

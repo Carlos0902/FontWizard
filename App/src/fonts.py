@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from font_detection import inspect_font
-from settings import REGISTRY_NAMES, get_system_weights, mod_filename
+from settings import CJK_WEIGHTS, JHENGHEI_WEIGHTS, REGISTRY_NAMES, get_system_weights, mod_filename
 
 @dataclass
 class FontPlanEntry:
@@ -88,7 +88,7 @@ def validate_selection(selection, source_labels=None, weights=None):
                 continue
 
         metadata = metadata_cache[cache_key]
-        if weight.startswith("yahei_") and cache_key not in chinese_checked:
+        if weight in CJK_WEIGHTS and cache_key not in chinese_checked:
             from chinese_fonts import validate_chinese_source
             try:
                 validate_chinese_source(source_path)
@@ -105,7 +105,7 @@ def validate_selection(selection, source_labels=None, weights=None):
 
         if weight.startswith("consolas_"):
             mono_family_names.add(metadata.family_name)
-        elif not weight.startswith("yahei_"):
+        elif weight not in CJK_WEIGHTS:
             ui_family_names.add(metadata.family_name)
 
         system_filename = active_weights[weight]
@@ -132,6 +132,8 @@ def validate_selection(selection, source_labels=None, weights=None):
             "此操作会替换系统微软雅黑和微软雅黑 UI，影响使用这些系统字体的界面。"
             "需重启 Windows；应用内置字体可能不受影响。常用字检查不代表完整字库覆盖。"
         )
+    if JHENGHEI_WEIGHTS.keys() & active_weights.keys():
+        summary.warnings.append("将替换微软正黑体常规字重，也会影响使用该系统字体的其他应用。重启后请验证微信输入框。")
 
     return summary
 
