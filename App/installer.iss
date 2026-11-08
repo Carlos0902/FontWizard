@@ -11,7 +11,7 @@
 #define MyAppVersionFull "5.0.2.0"
 #endif
 #define MyAppPublisher "Fontscape"
-#define MyAppURL "https://github.com/Carlos0902/FontWizard"
+#define MyAppURL "https://github.com/Carlos0902/Fontscape-Windows"
 
 [Setup]
 AppId={{8980A84E-5425-40CF-9222-DD3BD3C0F70E}

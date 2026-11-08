@@ -4,7 +4,7 @@ import uuid
 import hashlib
 
 APP_NAME = "Fontscape"
-APP_GITHUB_URL = "https://github.com/Carlos0902/FontWizard"
+APP_GITHUB_URL = "https://github.com/Carlos0902/Fontscape-Windows"
 SCHEMA_VERSION = 1
 
 SUPPORTED_WINDOWS_MAJOR = 10

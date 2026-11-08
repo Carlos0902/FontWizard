@@ -4,7 +4,7 @@ Fontscape 是面向中文用户的 Windows 系统字体工具，支持本地字�
 
 ## 下载与使用
 
-1. 在 [GitHub Releases](https://github.com/Carlos0902/FontWizard/releases) 下载 Fontscape Windows x64 便携包。
+1. 在 [GitHub Releases](https://github.com/Carlos0902/Fontscape-Windows/releases) 下载 Fontscape Windows x64 便携包。
 2. 解压后运行 **Fontscape.exe**，在 Windows 提示时批准管理员权限。支持 64 位 Windows 10 和 11，无需另外安装 Python。
 3. 选择本地静态 `.ttf`。可为不同字重单独选文件，也可拖动 **替换字号** 滑块在 100%–125% 之间实时预览。
 4. 确认样式后点击 **应用字体**，然后重启 Windows。撤销时点击 **恢复原始字体**，再重启。
