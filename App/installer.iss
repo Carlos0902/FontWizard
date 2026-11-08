@@ -5,10 +5,10 @@
 #define MyAppName "Fontscape"
 #define MyAppExeName "Fontscape.exe"
 #ifndef MyAppVersion
-#define MyAppVersion "5.0.1"
+#define MyAppVersion "5.0.2"
 #endif
 #ifndef MyAppVersionFull
-#define MyAppVersionFull "5.0.1.0"
+#define MyAppVersionFull "5.0.2.0"
 #endif
 #define MyAppPublisher "Fontscape"
 #define MyAppURL "https://github.com/Carlos0902/FontWizard"
